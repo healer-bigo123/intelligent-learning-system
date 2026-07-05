@@ -1,0 +1,50 @@
+"""
+后端服务安装配置
+"""
+from setuptools import setup, find_packages
+
+setup(
+    name="smart-learning-mas",
+    version="0.1.0",
+    description="基于大模型的个性化资源生成与学习多智能体系统",
+    author="开发团队",
+    packages=find_packages(),
+    python_requires=">=3.11",
+    install_requires=[
+        "fastapi>=0.111.0",
+        "uvicorn[standard]>=0.30.0",
+        "python-multipart>=0.0.9",
+        "pydantic>=2.7.0",
+        "pydantic-settings>=2.2.0",
+        "chromadb>=0.5.0",
+        "faiss-cpu>=1.8.0",
+        "sentence-transformers>=2.7.0",
+        "langchain>=0.2.0",
+        "langchain-community>=0.2.0",
+        "langchain-chroma>=0.1.0",
+        "langchain-huggingface>=0.0.3",
+        "langchain-text-splitters>=0.2.0",
+        "openai>=1.30.0",
+        "httpx>=0.27.0",
+        "sqlalchemy>=2.0.30",
+        "alembic>=1.13.0",
+        "redis>=5.0.0",
+        "pymysql>=1.1.0",
+        "numpy>=1.26.0",
+        "pandas>=2.2.0",
+        "python-dotenv>=1.0.0",
+        "PyYAML>=6.0.1",
+        "requests>=2.31.0",
+        "aiohttp>=3.9.0",
+        "tenacity>=8.3.0",
+    ],
+    extras_require={
+        "dev": [
+            "pytest>=8.2.0",
+            "pytest-asyncio>=0.23.0",
+            "black>=24.0.0",
+            "isort>=5.13.0",
+            "mypy>=1.10.0",
+        ]
+    }
+)

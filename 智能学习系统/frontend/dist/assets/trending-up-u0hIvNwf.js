@@ -1,0 +1,1 @@
+import{o}from"./index-CiIH_Tg2.js";var n=o("HistoryIcon",[["path",{d:"M3 3v5h5",key:"1xhq8a"}],["path",{d:"M3.05 13A9 9 0 1 0 6 5.3L3 8",key:"1xoms2"}],["path",{d:"M12 7v5l4 2",key:"1fdv2h"}]]),p=o("TrendingUpIcon",[["polyline",{points:"22 7 13.5 15.5 8.5 10.5 2 17",key:"126l90"}],["polyline",{points:"16 7 22 7 22 13",key:"kwv8wd"}]]);export{n as H,p as T};
