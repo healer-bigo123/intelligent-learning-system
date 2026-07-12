@@ -58,6 +58,11 @@ logs/
 dist-packages/
 dist-packages.zip
 *.lnk
+# Vite temporary config snapshots
+vite.config.ts.timestamp-*.mjs
+# PowerShell local scripts
+clean_root.ps1
+clean_final.ps1
 
 # Temporary files
 *.tmp
