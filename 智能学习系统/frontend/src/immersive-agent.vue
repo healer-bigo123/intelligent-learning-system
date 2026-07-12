@@ -221,27 +221,12 @@
             </div>
             
             <div class="modal-body">
-              <div class="model-grid">
-                <div
-                  v-for="model in models"
-                  :key="model.id"
-                  class="model-card"
-                  :class="{ selected: currentModelId === model.id, disabled: !model.available }"
-                  @click="selectModel(model)"
-                >
-                  <div class="model-radio">
-                    <div class="radio-circle" :class="{ checked: currentModelId === model.id }"></div>
-                  </div>
-                  <div class="model-details">
-                    <div class="model-title">{{ model.name }}</div>
-                    <div class="model-provider">{{ model.provider }}</div>
-                    <div class="model-desc">{{ model.description }}</div>
-                  </div>
-                  <div class="model-cost" :class="{ premium: model.cost !== '免费' }">
-                    {{ model.cost }}
-                  </div>
-                </div>
-              </div>
+              <ModelSelector
+                :models="models"
+                :selected-model-id="currentModelId"
+                :agent-name="selectedAgent?.name || '智能体'"
+                @select="handleModelSelect"
+              />
             </div>
             
             <div class="modal-footer">
@@ -313,7 +298,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, type Component } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, type Component } from 'vue'
 import {
   Bot, MessageCircle, Send, User, Settings, Cpu, X,
   HelpCircle, Calendar, CheckSquare, Heart, Star, BarChart, ChevronLeft, ChevronRight,
@@ -321,6 +306,8 @@ import {
 } from 'lucide-vue-next'
 import type { AgentInfo, ModelInfo, ChatMessage } from './types'
 import { mockAgents, mockModels } from './data/mockData'
+import { getAgents, queryAgent, createSession, getModels, selectModel as selectModelApi } from './api/agent'
+import ModelSelector from './components/ModelSelector.vue'
 
 const icons = { Bot, MessageCircle, Send, User, Settings, Cpu, X, ChevronLeft, ChevronRight, Image, Upload, Paperclip }
 
@@ -332,10 +319,11 @@ const getIcon = (iconName: string): Component => {
   return iconMap[iconName] || Bot
 }
 
-const agents = ref<AgentInfo[]>(mockAgents)
-const models = ref<ModelInfo[]>(mockModels)
-const selectedAgent = ref<AgentInfo | null>(agents.value[0])
-const currentModelId = ref(selectedAgent.value?.selectedModel || '')
+// 状态
+const agents = ref<AgentInfo[]>([])
+const models = ref<ModelInfo[]>([])
+const selectedAgent = ref<AgentInfo | null>(null)
+const currentModelId = ref('')
 const messages = ref<ChatMessage[]>([])
 const inputMessage = ref('')
 const isLoading = ref(false)
@@ -353,6 +341,8 @@ interface UploadedImage {
 const uploadedImages = ref<UploadedImage[]>([])
 
 const todaySessions = ref(12)
+const currentSessionId = ref<string | null>(null)
+const userId = ref('default_user') // 实际应该从用户认证系统获取
 
 const onlineAgents = computed(() => agents.value.filter(a => a.status === 'active').length)
 const availableModels = computed(() => models.value.filter(m => m.available).length)
@@ -369,14 +359,111 @@ const quickQuestions = [
   '分析我的学习情况'
 ]
 
-const getAgentResponse = (userInput: string): string => {
-  const responses: Record<string, string> = {
-    '你好，请问你能帮我做什么？': '你好！我是智能学习助手，可以帮助你解答问题、制定学习计划、批改作业、推荐学习资源等。请问有什么可以帮你的？',
-    '如何制定学习计划？': '制定学习计划需要考虑以下几点：\n1. 明确学习目标和时间期限\n2. 评估当前水平和可用时间\n3. 分解任务，制定优先级\n4. 安排每日学习时间\n5. 定期复盘和调整计划\n需要我帮你制定一个具体的计划吗？',
-    '推荐一些学习资源': '好的！根据你的学习需求，我可以推荐：\n- 数学：可汗学院、Coursera数学课程\n- 编程：LeetCode、Codecademy\n- 英语：BBC Learning English、Duolingo\n- 物理：MIT OpenCourseWare\n需要更具体的推荐吗？',
-    '分析我的学习情况': '当然可以！我可以从以下方面分析你的学习情况：\n- 学习时长和频率\n- 科目分布和进度\n- 任务完成情况\n- 薄弱环节识别\n- 改进建议\n需要我为你生成一份详细的分析报告吗？'
+// 初始化加载数据
+onMounted(async () => {
+  await loadAgents()
+  await loadModels()
+  await createNewSession()
+})
+
+// 加载智能体列表
+const loadAgents = async () => {
+  try {
+    const response = await getAgents()
+    // 将后端数据映射到前端类型
+    agents.value = response.agents.map(agent => ({
+      id: agent.id,
+      name: agent.name,
+      description: agent.description,
+      status: agent.status as 'active' | 'loading' | 'inactive',
+      color: '#6366f1',
+      icon: 'Bot',
+      selectedModel: 'deepseek-v3',
+      type: 'agent',
+      tools: agent.tools || []
+    }))
+    if (agents.value.length > 0) {
+      selectedAgent.value = agents.value[0]
+    }
+  } catch (error) {
+    console.error('加载智能体列表失败:', error)
+    // 降级使用 mock 数据
+    agents.value = mockAgents
+    if (agents.value.length > 0) {
+      selectedAgent.value = agents.value[0]
+    }
   }
-  return responses[userInput] || `我已收到你的问题："${userInput}"。我来为你提供专业的解答和帮助。`
+}
+
+// 加载模型列表
+const loadModels = async () => {
+  try {
+    const response = await getModels()
+    models.value = response.models.map(model => ({
+      id: model.id,
+      name: model.name,
+      provider: model.provider,
+      description: model.description,
+      available: model.available,
+      cost: '免费',
+      maxTokens: 8192 // 默认值，后端可以扩展返回实际值
+    }))
+    currentModelId.value = response.current_model
+  } catch (error) {
+    console.error('加载模型列表失败:', error)
+    // 降级使用 mock 数据
+    models.value = mockModels
+    currentModelId.value = 'deepseek-v3'
+  }
+}
+
+// 创建新会话
+const createNewSession = async () => {
+  try {
+    const session = await createSession(userId.value)
+    currentSessionId.value = session.session_id
+  } catch (error) {
+    console.error('创建会话失败:', error)
+  }
+}
+
+// 发送消息到后端
+const sendMessageToBackend = async (userInput: string): Promise<string> => {
+  try {
+    const response = await queryAgent({
+      user_input: userInput,
+      user_id: userId.value,
+      session_id: currentSessionId.value || undefined
+    })
+    
+    // 从响应中提取回答
+    if (response.result && response.result.answer) {
+      return response.result.answer
+    } else if (response.result && typeof response.result === 'object') {
+      return JSON.stringify(response.result, null, 2)
+    }
+    return '抱歉，我暂时无法回答这个问题。'
+  } catch (error) {
+    console.error('发送消息失败:', error)
+    return '发送消息失败，请稍后重试。'
+  }
+}
+
+
+
+// 处理模型选择（来自 ModelSelector 组件）
+const handleModelSelect = (modelId: string) => {
+  currentModelId.value = modelId
+}
+
+// 确认模型选择
+const confirmModel = async () => {
+  try {
+    await selectModelApi(currentModelId.value)
+    showModelModal.value = false
+  } catch (error) {
+    console.error('切换模型失败:', error)
+  }
 }
 
 watch(selectedAgent, (newAgent) => {
@@ -421,19 +508,6 @@ const getStatusText = (status: string): string => {
 const formatTime = (timestamp: Date): string => {
   const date = new Date(timestamp)
   return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-}
-
-const selectModel = (model: ModelInfo) => {
-  if (model.available) {
-    currentModelId.value = model.id
-  }
-}
-
-const confirmModel = () => {
-  if (selectedAgent.value) {
-    selectedAgent.value.selectedModel = currentModelId.value
-  }
-  showModelModal.value = false
 }
 
 const triggerImageUpload = () => {
@@ -494,14 +568,8 @@ const sendMessage = async () => {
   await nextTick(() => scrollToBottom())
   
   try {
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    let responseContent = ''
-    if (hasImages) {
-      responseContent = '已收到你上传的图片，我来帮你进行识别和批改。\n\n根据图片内容分析：\n- 图像识别完成\n- 内容分析中...\n\n【识别结果】\n我已识别到图片中的内容，以下是我的分析和批改：\n\n1. **内容识别**：图片中显示的是学习相关的内容\n2. **分析结果**：经分析，你的答案是正确的/需要改进...\n3. **建议**：继续努力，保持良好的学习习惯！\n\n如果需要更详细的分析，请提供更多信息。'
-    } else {
-      responseContent = getAgentResponse(content)
-    }
+    // 调用后端 API
+    const responseContent = await sendMessageToBackend(content)
     
     const response: ChatMessage = {
       id: `msg-${Date.now()}-bot`,
@@ -515,6 +583,14 @@ const sendMessage = async () => {
     await nextTick(() => scrollToBottom())
   } catch (error) {
     console.error('发送失败:', error)
+    const errorMessage: ChatMessage = {
+      id: `msg-${Date.now()}-error`,
+      role: 'assistant',
+      content: '抱歉，发送消息失败，请稍后重试。',
+      timestamp: new Date(),
+      agentId: selectedAgent.value?.id || ''
+    }
+    messages.value.push(errorMessage)
   } finally {
     isLoading.value = false
   }
