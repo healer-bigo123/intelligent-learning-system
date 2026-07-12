@@ -8,7 +8,7 @@ Chroma 向量数据库同时作为文档/知识存储
 3. 完善索引定义
 4. 支持 CASCADE、SET NULL 等级联操作
 """
-from sqlalchemy import create_engine, Column, String, Integer, DateTime, Text, Float, Boolean, ForeignKey
+from sqlalchemy import create_engine, Column, String, Integer, DateTime, Text, Float, Boolean, ForeignKey, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
@@ -20,7 +20,6 @@ engine = create_engine(
     settings.DATABASE_URL,
     connect_args={
         "check_same_thread": False,
-        "foreign_keys": True  # SQLite 外键约束启用
     } if "sqlite" in settings.DATABASE_URL else {},
     echo=settings.DEBUG,
 )
@@ -32,7 +31,7 @@ class ForeignKeySession(sessionmaker):
         session = super().__call__(**local_kw)
         # 在 SQLite 中强制启用外键约束
         if "sqlite" in settings.DATABASE_URL:
-            session.execute("PRAGMA foreign_keys = ON")
+            session.execute(text("PRAGMA foreign_keys = ON"))
         return session
 
 SessionLocal = ForeignKeySession(autocommit=False, autoflush=False, bind=engine)
@@ -559,6 +558,25 @@ class ExternalDataRecord(Base):
     )
 
 
+# ========== 任务管理模块（新增）==========
+
+class Task(Base):
+    """任务表 - 今日任务管理"""
+    __tablename__ = "tasks"
+
+    id = Column(String(64), primary_key=True, index=True)
+    user_id = Column(String(64), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=True)
+    subject = Column(String(100), default="其他", index=True)
+    priority = Column(String(20), default="medium", index=True)  # low, medium, high
+    status = Column(String(20), default="pending", index=True)  # pending, completed
+    due_date = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 # ========== 数据库操作函数 ==========
 
 def init_db():
@@ -573,7 +591,7 @@ def get_db():
     try:
         # 确保 SQLite 外键约束启用
         if "sqlite" in settings.DATABASE_URL:
-            db.execute("PRAGMA foreign_keys = ON")
+            db.execute(text("PRAGMA foreign_keys = ON"))
         yield db
     finally:
         db.close()
@@ -592,7 +610,7 @@ def test_foreign_key_constraint():
     db = SessionLocal()
     try:
         # 测试1: 验证外键约束已启用
-        result = db.execute("PRAGMA foreign_keys").fetchone()
+        result = db.execute(text("PRAGMA foreign_keys")).fetchone()
         if result and result[0] == 1:
             print("[OK] 外键约束已启用")
             return True

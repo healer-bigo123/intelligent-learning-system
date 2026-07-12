@@ -3,7 +3,7 @@ API V1 路由聚合
 """
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import health, knowledge, chat, agents, auth, mistakes, exercises, mindmaps, analytics, classroom, study_materials, favorites, notifications, achievements, timeline, learning_paths, learning_websites, external_data, image_recognition
+from app.api.v1.endpoints import health, knowledge, chat, agents, auth, mistakes, exercises, mindmaps, analytics, classroom, study_materials, favorites, notifications, achievements, timeline, learning_paths, learning_websites, external_data, image_recognition, tasks
 
 api_router = APIRouter()
 
@@ -45,6 +45,9 @@ api_router.include_router(learning_paths.router, prefix="/learning-paths", tags=
 
 # 学习记录时间线
 api_router.include_router(timeline.router, prefix="/timeline", tags=["timeline"])
+
+# 任务管理（新增）
+api_router.include_router(tasks.router, prefix="/tasks", tags=["tasks"])
 
 # 收藏功能
 api_router.include_router(favorites.router, prefix="/favorites", tags=["favorites"])

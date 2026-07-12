@@ -133,21 +133,55 @@
       <div class="section-card">
         <div class="section-header">
           <h3 class="section-title">
-            <component :is="icons.Target" class="title-icon" />
-            学习进度
+            <component :is="icons.PieChart" class="title-icon" />
+            学习内容分布
           </h3>
-          <span class="progress-text">本周目标: {{ weeklyGoal }}%</span>
+          <div class="range-selector">
+            <button
+              v-for="r in timeRanges"
+              :key="r.value"
+              class="range-btn"
+              :class="{ active: selectedRange === r.value }"
+              @click="selectedRange = r.value"
+            >
+              {{ r.label }}
+            </button>
+          </div>
         </div>
 
-        <div class="progress-chart">
-          <div class="progress-item" v-for="item in progressItems" :key="item.name">
-            <div class="progress-header">
-              <span class="progress-name">{{ item.name }}</span>
-              <span class="progress-percent">{{ item.percent }}%</span>
+        <div class="distribution-chart">
+          <div class="pie-chart-wrap">
+            <svg class="pie-svg" viewBox="0 0 100 100">
+              <circle
+                v-for="(segment, index) in pieSegments"
+                :key="index"
+                cx="50"
+                cy="50"
+                r="40"
+                :stroke="segment.color"
+                stroke-width="40"
+                :stroke-dasharray="segment.dashArray"
+                :stroke-dashoffset="segment.dashOffset"
+                transform="rotate(-90 50 50)"
+                fill="none"
+              />
+            </svg>
+            <div class="pie-center">
+              <span class="pie-total">{{ distributionTotalHours }}h</span>
+              <span class="pie-label">总计</span>
             </div>
-            <div class="progress-bar">
-              <div class="progress-fill" :style="{ width: item.percent + '%', background: item.color }"></div>
+          </div>
+          <div class="pie-legend">
+            <div
+              v-for="item in contentDistribution"
+              :key="item.name"
+              class="legend-item"
+            >
+              <div class="legend-color" :style="{ background: item.color }"></div>
+              <span class="legend-name">{{ item.name }}</span>
+              <span class="legend-value">{{ item.percent }}%</span>
             </div>
+            <div v-if="contentDistribution.length === 0" class="no-data">暂无学习数据</div>
           </div>
         </div>
       </div>
@@ -217,18 +251,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, type Component, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, type Component, onMounted, onUnmounted } from 'vue'
 import {
   BookOpen, Clock, Award, TrendingUp, ListChecks, Target,
   Star, History, Check, Play, Calculator, MessageSquare,
-  FlaskConical, Globe, Plus, Trash2
+  FlaskConical, Globe, Plus, Trash2, PieChart
 } from 'lucide-vue-next'
 import { api } from '@/api/client'
 
 const icons = {
   BookOpen, Clock, Award, TrendingUp, ListChecks, Target,
   Star, History, Check, Play, Calculator, MessageSquare,
-  FlaskConical, Globe, Plus, Trash2
+  FlaskConical, Globe, Plus, Trash2, PieChart
 }
 
 const courseIconMap: Record<string, Component> = {
@@ -250,26 +284,46 @@ const stats = ref({
   totalCourses: 0,
   totalHours: 0,
   completedTasks: 0,
-  streakDays: 0
+  streakDays: 0,
+  totalTasks: 0
 })
 
 const weeklyGoal = ref(78)
 
 const todayTasks = ref<any[]>([])
 
-const toggleTask = (taskId: number) => {
+const toggleTask = async (taskId: string) => {
   const task = todayTasks.value.find(t => t.id === taskId)
-  if (task) {
+  if (!task) return
+
+  const newStatus = task.completed ? 'pending' : 'completed'
+  try {
+    await api.put(`/tasks/${taskId}`, { status: newStatus })
     task.completed = !task.completed
+    task.status = newStatus
+    // 更新统计
+    stats.value.completedTasks = todayTasks.value.filter(t => t.completed).length
+  } catch (error) {
+    console.error('更新任务状态失败:', error)
+    alert('更新任务状态失败，请重试')
   }
 }
 
-const deleteTask = (taskId: number) => {
-  if (confirm('确定要删除这个任务吗？')) {
+const deleteTask = async (taskId: string) => {
+  if (!confirm('确定要删除这个任务吗？')) return
+
+  try {
+    await api.delete(`/tasks/${taskId}`)
     const index = todayTasks.value.findIndex(t => t.id === taskId)
     if (index !== -1) {
       todayTasks.value.splice(index, 1)
     }
+    // 更新统计
+    stats.value.completedTasks = todayTasks.value.filter(t => t.completed).length
+    stats.value.totalTasks = todayTasks.value.length
+  } catch (error) {
+    console.error('删除任务失败:', error)
+    alert('删除任务失败，请重试')
   }
 }
 
@@ -321,28 +375,40 @@ const newTaskTitle = ref('')
 const newTaskSubject = ref('数学')
 const newTaskPriority = ref('medium')
 
-const addTask = () => {
+const addTask = async () => {
   if (!newTaskTitle.value.trim()) return
-  
-  const now = new Date()
-  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-  
-  todayTasks.value.push({
-    id: Date.now(),
-    title: newTaskTitle.value.trim(),
-    subject: newTaskSubject.value,
-    time: timeStr,
-    priority: newTaskPriority.value as 'high' | 'medium' | 'low',
-    completed: false
-  })
-  
-  // 按优先级排序：紧急 > 中等 > 普通
-  todayTasks.value.sort((a, b) => {
-    const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 }
-    return priorityOrder[a.priority] - priorityOrder[b.priority]
-  })
-  
-  newTaskTitle.value = ''
+
+  try {
+    const response = await api.post('/tasks', {
+      title: newTaskTitle.value.trim(),
+      description: '',
+      subject: newTaskSubject.value,
+      priority: newTaskPriority.value
+    })
+
+    const newTask = response.data
+    todayTasks.value.push({
+      id: newTask.id,
+      title: newTask.title,
+      subject: newTask.subject,
+      time: new Date(newTask.created_at).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      priority: newTask.priority,
+      completed: newTask.status === 'completed',
+      status: newTask.status
+    })
+
+    // 按优先级排序：紧急 > 中等 > 普通
+    todayTasks.value.sort((a, b) => {
+      const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 }
+      return priorityOrder[a.priority] - priorityOrder[b.priority]
+    })
+
+    stats.value.totalTasks = todayTasks.value.length
+    newTaskTitle.value = ''
+  } catch (error) {
+    console.error('添加任务失败:', error)
+    alert('添加任务失败，请重试')
+  }
 }
 
 const progressItems = ref([
@@ -356,115 +422,194 @@ const recommendedCourses = ref<any[]>([])
 
 const recentHistory = ref<any[]>([])
 
+// ========== 学习内容分布（扇形图）==========
+const timeRanges = [
+  { label: '今日', value: 'today' },
+  { label: '本周', value: 'week' },
+  { label: '本月', value: 'month' },
+  { label: '全部', value: 'all' }
+]
+
+const selectedRange = ref('week')
+
+const subjectColorMap: Record<string, string> = {
+  '数学': '#3b82f6',
+  '英语': '#f59e0b',
+  '物理': '#10b981',
+  '化学': '#ef4444',
+  '编程': '#8b5cf6',
+  '生物': '#06b6d4'
+}
+
+const fallbackColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
+
+const contentDistribution = ref<{ name: string; percent: number; color: string; hours: number }[]>([])
+
+const distributionTotalHours = computed(() =>
+  Math.round(contentDistribution.value.reduce((sum, item) => sum + item.hours, 0) * 10) / 10
+)
+
+const pieSegments = computed(() => {
+  let currentOffset = 0
+  const circumference = 2 * Math.PI * 40
+  return contentDistribution.value.map(item => {
+    const percentage = item.percent
+    const dashArray = `${(percentage / 100) * circumference} ${circumference}`
+    const dashOffset = -currentOffset * (circumference / 100)
+    currentOffset += percentage
+    return { color: item.color, dashArray, dashOffset }
+  })
+})
+
+const getDateRange = (range: string) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const endDate = new Date(today)
+  endDate.setHours(23, 59, 59, 999)
+  let startDate = new Date(today)
+  switch (range) {
+    case 'today': break
+    case 'week': startDate.setDate(today.getDate() - 6); break
+    case 'month': startDate.setDate(1); break
+    case 'all': startDate = new Date('2000-01-01'); break
+    default: startDate.setDate(today.getDate() - 6)
+  }
+  return {
+    start_date: startDate.toISOString().split('T')[0],
+    end_date: endDate.toISOString().split('T')[0]
+  }
+}
+
+const inferSubject = (title: string): string => {
+  const t = (title || '').toLowerCase()
+  if (t.includes('python') || t.includes('编程') || t.includes('排序') || t.includes('程序') || t.includes('代码')) return '编程'
+  if (t.includes('数学') || t.includes('函数') || t.includes('方程') || t.includes('几何') || t.includes('三角') || t.includes('代数')) return '数学'
+  if (t.includes('英语') || t.includes('语法') || t.includes('阅读') || t.includes('词汇')) return '英语'
+  if (t.includes('物理') || t.includes('力学') || t.includes('电场') || t.includes('运动') || t.includes('光学')) return '物理'
+  if (t.includes('化学') || t.includes('物质') || t.includes('反应') || t.includes('元素')) return '化学'
+  return '其他'
+}
+
+const loadDistributionData = async () => {
+  try {
+    const range = getDateRange(selectedRange.value)
+    const res = await api.get('/timeline', {
+      params: { start_date: range.start_date, end_date: range.end_date, page_size: 100 }
+    })
+    const activities = res.data?.items || []
+    const subjectDuration: Record<string, number> = {}
+    activities.forEach((a: any) => {
+      const subject = inferSubject(a.title || '')
+      subjectDuration[subject] = (subjectDuration[subject] || 0) + (a.duration || 0)
+    })
+    const totalDuration = Object.values(subjectDuration).reduce((sum, d) => sum + d, 0)
+    contentDistribution.value = Object.entries(subjectDuration)
+      .filter(([, d]) => d > 0)
+      .sort(([, a], [, b]) => b - a)
+      .map(([name, duration], index) => ({
+        name,
+        percent: totalDuration > 0 ? Math.round((duration / totalDuration) * 100) : 0,
+        color: subjectColorMap[name] || fallbackColors[index % fallbackColors.length],
+        hours: Math.round((duration / 3600) * 10) / 10
+      }))
+  } catch (error) {
+    console.error('加载学习内容分布失败:', error)
+    contentDistribution.value = []
+  }
+}
+
+watch(selectedRange, () => { loadDistributionData() })
+
 // 从后端加载数据
 const loadDashboardData = async () => {
   try {
-    const userId = 'user-001'
-    
     // 并行加载多个数据源
     const [
+      overviewRes,
       materialsRes,
-      resourcesRes,
-      mistakesRes,
-      exercisesRes,
-      activitiesRes,
-      pathsRes
+      subjectsRes,
+      timelineRes,
+      tasksRes,
+      taskStatsRes
     ] = await Promise.all([
-      api.get(`/study-materials?user_id=${userId}`).catch(() => ({ data: [] })),
-      api.get(`/study-materials?user_id=${userId}`).catch(() => ({ data: [] })),
-      api.get(`/mistakes?user_id=${userId}`).catch(() => ({ data: [] })),
-      api.get(`/exercises?user_id=${userId}`).catch(() => ({ data: [] })),
-      api.get(`/timeline?user_id=${userId}`).catch(() => ({ data: [] })),
-      api.get(`/learning-paths?user_id=${userId}`).catch(() => ({ data: [] }))
+      api.get('/analytics/overview'),
+      api.get('/study-materials?page_size=100'),
+      api.get('/analytics/subjects'),
+      api.get('/timeline?page_size=20'),
+      api.get('/tasks/today'),
+      api.get('/tasks/stats')
     ])
-    
-    const materials = materialsRes.data || []
-    const resources = resourcesRes.data || []
-    const mistakes = mistakesRes.data || []
-    const exercises = exercisesRes.data || []
-    const activities = activitiesRes.data || []
-    const paths = pathsRes.data || []
-    
+
+    const overview = overviewRes.data || {}
+    const materials = materialsRes.data?.items || []
+    const subjectItems = subjectsRes.data?.items || []
+    const activities = timelineRes.data?.items || []
+    const taskItems = tasksRes.data?.items || []
+    const taskStats = taskStatsRes.data || {}
+
     // 更新统计数据
     stats.value = {
-      totalCourses: materials.length + resources.length,
-      totalHours: Math.round(activities.reduce((sum: number, a: any) => sum + (a.duration || 0), 0) / 3600),
-      completedTasks: activities.filter((a: any) => a.activity_type === 'exercise').length,
-      streakDays: 7 // 从活动记录计算连续天数
+      totalCourses: materials.length,
+      totalHours: Math.round((overview.total_duration || 0) / 3600),
+      completedTasks: taskStats.completed || 0,
+      streakDays: overview.streak_days || 0,
+      totalTasks: taskStats.total || 0
     }
-    
-    // 更新今日任务（从学习活动生成）
-    const todayActivities = activities.filter((a: any) => {
-      const created = new Date(a.created_at)
-      const today = new Date()
-      return created.toDateString() === today.toDateString()
-    })
-    
-    todayTasks.value = todayActivities.map((a: any) => ({
-      id: a.id,
-      title: a.title || '学习任务',
-      subject: a.activity_type === 'exercise' ? '练习' : '学习',
-      time: new Date(a.created_at).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-      priority: 'medium',
-      completed: true
+
+    // 更新今日任务
+    todayTasks.value = taskItems.map((t: any) => ({
+      id: t.id,
+      title: t.title,
+      subject: t.subject,
+      time: new Date(t.created_at).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      priority: t.priority,
+      completed: t.status === 'completed',
+      status: t.status
     }))
-    
+
     // 更新推荐课程
-    recommendedCourses.value = resources.slice(0, 3).map((r: any, index: number) => ({
+    const colorList = [
+      'linear-gradient(135deg, #3b82f6, #6366f1)',
+      'linear-gradient(135deg, #10b981, #34d399)',
+      'linear-gradient(135deg, #f59e0b, #fbbf24)'
+    ]
+    recommendedCourses.value = materials.slice(0, 3).map((r: any, index: number) => ({
       id: r.id,
       title: r.title,
       instructor: r.generated_by || '系统推荐',
       duration: `${r.duration || 30}分钟`,
       category: r.subject === '数学' ? 'math' : r.subject === '英语' ? 'english' : r.subject === '物理' ? 'physics' : r.subject === '化学' ? 'chemistry' : 'default',
-      color: ['linear-gradient(135deg, #3b82f6, #6366f1)', 'linear-gradient(135deg, #10b981, #34d399)', 'linear-gradient(135deg, #f59e0b, #fbbf24)'][index % 3],
-      tags: [r.subject, r.type]
+      color: colorList[index % colorList.length],
+      tags: r.tags || [r.subject, r.type || '课程']
     }))
-    
+
     // 更新最近学习
     recentHistory.value = activities.slice(0, 4).map((a: any) => ({
       id: a.id,
       title: a.title || '学习活动',
       category: 'default',
-      progress: Math.round((a.score || 0)),
+      progress: Math.round(a.score || 0),
       time: new Date(a.created_at).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
     }))
-    
-    // 更新学习进度（从错题和练习统计）
-    const subjectStats: Record<string, { total: number; correct: number }> = {}
-    exercises.forEach((e: any) => {
-      const subject = e.subject || '其他'
-      if (!subjectStats[subject]) subjectStats[subject] = { total: 0, correct: 0 }
-      subjectStats[subject].total++
-    })
-    
-    mistakes.forEach((m: any) => {
-      const subject = m.subject || '其他'
-      if (!subjectStats[subject]) subjectStats[subject] = { total: 0, correct: 0 }
-      subjectStats[subject].total++
-    })
-    
-    // 更新进度条
+
+    // 更新学习进度（从学科成绩趋势）
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
-    progressItems.value = Object.entries(subjectStats).slice(0, 4).map(([subject, stats], index) => ({
-      name: subject,
-      percent: Math.min(100, Math.round((stats.correct / Math.max(1, stats.total)) * 100)),
-      color: colors[index % colors.length]
-    }))
-    
-    // 如果没有数据，使用默认值
-    if (progressItems.value.length === 0) {
+    if (subjectItems.length > 0) {
+      progressItems.value = subjectItems.slice(0, 4).map((item: any, index: number) => ({
+        name: item.subject,
+        percent: Math.round(item.accuracy_rate || 0),
+        color: colors[index % colors.length]
+      }))
+    } else {
       progressItems.value = [
-        { name: '数学', percent: 85, color: '#3b82f6' },
-        { name: '英语', percent: 72, color: '#10b981' },
-        { name: '物理', percent: 90, color: '#f59e0b' },
-        { name: '化学', percent: 68, color: '#ef4444' }
+        { name: '数学', percent: 0, color: '#3b82f6' },
+        { name: '英语', percent: 0, color: '#10b981' },
+        { name: '物理', percent: 0, color: '#f59e0b' },
+        { name: '化学', percent: 0, color: '#ef4444' }
       ]
     }
-    
   } catch (error) {
     console.error('加载数据失败:', error)
-    // 使用默认数据
-    stats.value = { totalCourses: 12, totalHours: 156, completedTasks: 89, streakDays: 15 }
   }
 }
 
@@ -475,6 +620,7 @@ onMounted(() => {
   }
   // 加载后端数据
   loadDashboardData()
+  loadDistributionData()
 })
 
 onUnmounted(() => {
@@ -1128,5 +1274,142 @@ onUnmounted(() => {
   font-size: 11px;
   color: var(--text-muted);
   flex-shrink: 0;
+}
+
+/* ========== 学习内容分布扇形图 ========== */
+.range-selector {
+  display: flex;
+  gap: 3px;
+  padding: 2px;
+  background: rgba(51, 65, 85, 0.4);
+  border-radius: 8px;
+}
+
+.range-btn {
+  padding: 4px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: rgba(148, 163, 184, 0.7);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+
+  &:hover {
+    background: rgba(71, 85, 105, 0.5);
+    color: rgba(241, 245, 249, 0.9);
+  }
+
+  &.active {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.4);
+  }
+}
+
+.distribution-chart {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+}
+
+.pie-chart-wrap {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  flex-shrink: 0;
+
+  .pie-svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+  }
+
+  .pie-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.99));
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 2px solid rgba(71, 85, 105, 0.5);
+
+    .pie-total {
+      font-size: 20px;
+      font-weight: 700;
+      color: rgba(241, 245, 249, 0.98);
+      line-height: 1.1;
+    }
+
+    .pie-label {
+      font-size: 10px;
+      color: rgba(148, 163, 184, 0.8);
+      font-weight: 500;
+    }
+  }
+}
+
+.pie-legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 120px;
+
+  .no-data {
+    font-size: 12px;
+    color: rgba(148, 163, 184, 0.5);
+    text-align: center;
+    padding: 20px 0;
+  }
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(51, 65, 85, 0.3);
+  transition: all 0.2s ease;
+  border: 1px solid rgba(71, 85, 105, 0.2);
+
+  &:hover {
+    background: rgba(51, 65, 85, 0.5);
+    transform: translateX(4px);
+  }
+
+  .legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+  }
+
+  .legend-name {
+    flex: 1;
+    font-size: 12px;
+    color: rgba(241, 245, 249, 0.9);
+    font-weight: 500;
+  }
+
+  .legend-value {
+    font-size: 13px;
+    color: rgba(241, 245, 249, 0.95);
+    font-weight: 700;
+    min-width: 38px;
+    text-align: right;
+  }
 }
 </style>

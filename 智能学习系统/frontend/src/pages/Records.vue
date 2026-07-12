@@ -199,7 +199,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, type Component, onMounted } from 'vue'
+import { ref, computed, type Component, onMounted, watch } from 'vue'
 import {
   Clock, Target, CheckSquare, TrendingUp, BarChart,
   PieChart, History, Play, Calculator, Globe, FlaskConical, Code
@@ -237,17 +237,29 @@ const totalHours = ref(0)
 const completedCourses = ref(0)
 const completedTasks = ref(0)
 
-const dailyData = ref([
-  { day: '周一', hours: 0, color: '#3b82f6' },
-  { day: '周二', hours: 0, color: '#10b981' },
-  { day: '周三', hours: 0, color: '#f59e0b' },
-  { day: '周四', hours: 0, color: '#ef4444' },
-  { day: '周五', hours: 0, color: '#8b5cf6' },
-  { day: '周六', hours: 0, color: '#06b6d4' },
-  { day: '周日', hours: 0, color: '#ec4899' }
-])
+// 生成最近7天的日期标签和颜色
+const dayColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899']
+const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
-const maxDailyHours = computed(() => Math.max(...dailyData.value.map(d => d.hours)))
+const generateLast7Days = () => {
+  const days = []
+  const today = new Date()
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(today.getDate() - i)
+    days.push({
+      date: d.toISOString().split('T')[0],
+      day: dayNames[d.getDay()],
+      hours: 0,
+      color: dayColors[(6 - i) % dayColors.length]
+    })
+  }
+  return days
+}
+
+const dailyData = ref(generateLast7Days())
+
+const maxDailyHours = computed(() => Math.max(...dailyData.value.map(d => d.hours), 1))
 
 const yAxisLabels = computed(() => {
   const max = Math.ceil(maxDailyHours.value)
@@ -286,85 +298,167 @@ const pieSegments = computed(() => {
 
 const learningHistory = ref<any[]>([])
 
+// 根据时间范围计算起止日期
+const getDateRange = (range: string) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const endDate = new Date(today)
+  endDate.setHours(23, 59, 59, 999)
+  let startDate = new Date(today)
+
+  switch (range) {
+    case 'today':
+      break
+    case 'week':
+      startDate.setDate(today.getDate() - 6)
+      break
+    case 'month':
+      startDate.setDate(1)
+      break
+    case 'all':
+      startDate = new Date('2000-01-01')
+      break
+    default:
+      startDate.setDate(today.getDate() - 6)
+  }
+
+  return {
+    start_date: startDate.toISOString().split('T')[0],
+    end_date: endDate.toISOString().split('T')[0]
+  }
+}
+
+const subjectColorMap: Record<string, string> = {
+  '数学': '#3b82f6',
+  '物理': '#10b981',
+  '化学': '#ef4444',
+  '英语': '#f59e0b',
+  '编程': '#8b5cf6',
+  '生物': '#06b6d4'
+}
+
 // 从后端加载学习记录
 const loadRecords = async () => {
   try {
+    const range = getDateRange(selectedRange.value)
+    const isAll = selectedRange.value === 'all'
+
     // 并行加载多个数据源
-    const [timelineRes, overviewRes, subjectsRes] = await Promise.all([
-      api.get('/timeline?page_size=50').catch(() => ({ data: { items: [] } })),
+    const [timelineRes, dailyRes, overviewRes, subjectsRes] = await Promise.all([
+      api.get('/timeline', {
+        params: {
+          start_date: range.start_date,
+          end_date: range.end_date,
+          page_size: 50
+        }
+      }).catch(() => ({ data: { items: [] } })),
+      api.get('/timeline/stats/daily', {
+        params: isAll ? {} : { start_date: range.start_date, end_date: range.end_date }
+      }).catch(() => ({ data: { items: [] } })),
       api.get('/timeline/stats/overview').catch(() => ({ data: { total_duration: 0, total_activities: 0, streak_days: 0 } })),
       api.get('/analytics/subjects').catch(() => ({ data: { items: [] } }))
     ])
 
     const timeline = timelineRes.data.items || []
+    const dailyStats = dailyRes.data.items || []
     const overview = overviewRes.data
     const subjects = subjectsRes.data.items || []
 
-    // 更新统计概览
-    totalHours.value = Math.round((overview.total_duration || 0) / 3600)
-    completedTasks.value = overview.total_activities || 0
-    completedCourses.value = timeline.filter((a: any) => a.activity_type === 'exercise').length
-
-    // 更新每日学习时长（从活动记录计算）
-    const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-    const dayColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899']
-    
-    const dailyHours: Record<string, number> = {}
-    timeline.forEach((activity: any) => {
-      const date = new Date(activity.created_at)
-      const dayName = dayNames[date.getDay()]
-      const hours = (activity.duration || 0) / 3600
-      dailyHours[dayName] = (dailyHours[dayName] || 0) + hours
+    // 更新每日学习时长（基于日期）
+    const dailyMap: Record<string, number> = {}
+    dailyStats.forEach((item: any) => {
+      const dateKey = item.date?.split('T')[0]
+      if (dateKey) {
+        dailyMap[dateKey] = (dailyMap[dateKey] || 0) + ((item.total_duration || 0) / 3600)
+      }
     })
 
-    dailyData.value = dayNames.map((day, index) => ({
-      day,
-      hours: Math.round((dailyHours[day] || 0) * 10) / 10,
-      color: dayColors[index]
+    // 以最近7天为图表维度
+    const last7Days = generateLast7Days()
+    dailyData.value = last7Days.map(item => ({
+      ...item,
+      hours: Math.round((dailyMap[item.date] || 0) * 10) / 10
     }))
 
-    // 更新内容分布
-    const subjectHours: Record<string, number> = {}
+    // 根据时间范围决定统计口径
+    if (isAll) {
+      // "全部" 使用后端总览数据（所有历史累计）
+      totalHours.value = Math.round((overview.total_duration || 0) / 3600 * 10) / 10
+      completedTasks.value = overview.total_activities || 0
+    } else {
+      // 其他范围按起止日期计算
+      const rangeDuration = Object.values(dailyMap).reduce((sum: number, h: number) => sum + h, 0)
+      totalHours.value = Math.round(rangeDuration * 10) / 10
+      completedTasks.value = timeline.length
+    }
+
+    // 完成课程数：material_read / session_complete 类型的活动数
+    completedCourses.value = timeline.filter((a: any) =>
+      a.activity_type === 'material_read' || a.activity_type === 'session_complete'
+    ).length
+
+    // 更新内容分布（基于各学科练习数）
+    const subjectTotals: Record<string, number> = {}
     subjects.forEach((subject: any) => {
       const name = subject.subject || '其他'
-      subjectHours[name] = (subjectHours[name] || 0) + (subject.total_exercises || 0)
+      subjectTotals[name] = (subjectTotals[name] || 0) + (subject.total_exercises || 0)
     })
 
-    const totalExercises = Object.values(subjectHours).reduce((sum: number, h: any) => sum + h, 0)
-    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
-    
-    contentDistribution.value = Object.entries(subjectHours)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 4)
-      .map(([name, hours], index) => ({
+    const totalExercises = Object.values(subjectTotals).reduce((sum: number, h: any) => sum + h, 0)
+
+    contentDistribution.value = Object.entries(subjectTotals)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .slice(0, 5)
+      .map(([name, count], index) => ({
         name,
-        percent: totalExercises > 0 ? Math.round((hours / totalExercises) * 100) : 0,
-        color: colors[index % colors.length],
-        hours: Math.round(hours * 10) / 10
+        percent: totalExercises > 0 ? Math.round(((count as number) / totalExercises) * 100) : 0,
+        color: subjectColorMap[name] || dayColors[index % dayColors.length],
+        hours: Math.round((count as number) * 10) / 10
       }))
 
     // 更新学习历史
-    learningHistory.value = timeline.slice(0, 5).map((activity: any) => ({
-      id: activity.id,
-      title: activity.title || '学习活动',
-      category: '编程', // 默认分类
-      progress: Math.round((activity.score || 0)),
-      lastStudy: new Date(activity.created_at).toLocaleString('zh-CN', { 
-        month: 'short', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }),
-      totalTime: `${Math.round((activity.duration || 0) / 60)}分钟`,
-      color: '#6366f1'
-    }))
+    learningHistory.value = timeline.slice(0, 8).map((activity: any) => {
+      // 根据活动标题或类型推断学科
+      let category = '其他'
+      const title = (activity.title || '').toLowerCase()
+      if (title.includes('python') || title.includes('编程') || title.includes('排序') || title.includes('函数')) {
+        category = '编程'
+      } else if (title.includes('数学') || title.includes('函数') || title.includes('方程') || title.includes('几何')) {
+        category = '数学'
+      } else if (title.includes('英语') || title.includes('语法') || title.includes('阅读')) {
+        category = '英语'
+      } else if (title.includes('物理') || title.includes('力学') || title.includes('电场')) {
+        category = '物理'
+      } else if (title.includes('化学') || title.includes('方程') || title.includes('物质')) {
+        category = '化学'
+      }
 
+      return {
+        id: activity.id,
+        title: activity.title || '学习活动',
+        category,
+        progress: Math.min(100, Math.round((activity.score || 0))),
+        lastStudy: new Date(activity.created_at).toLocaleString('zh-CN', {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        totalTime: `${Math.round((activity.duration || 0) / 60)}分钟`,
+        color: subjectColorMap[category] || '#6366f1'
+      }
+    })
   } catch (error) {
     console.error('加载学习记录失败:', error)
   }
 }
 
 onMounted(() => {
+  loadRecords()
+})
+
+// 时间范围切换时重新加载数据
+watch(selectedRange, () => {
   loadRecords()
 })
 </script>

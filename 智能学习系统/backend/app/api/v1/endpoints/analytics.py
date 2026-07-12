@@ -9,7 +9,7 @@ from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, case
 
 from app.models.database import (
     ExerciseRecord, Exercise, ExerciseSession,
@@ -129,29 +129,34 @@ async def get_subject_trends(
     """
     各科成绩趋势（按学科分组统计正确率、练习数）
     """
-    results = db.query(
-        Exercise.subject,
-        func.count(ExerciseRecord.id).label("total"),
-        func.sum(func.case([(ExerciseRecord.is_correct == True, 1)], else_=0)).label("correct")
-    ).join(
-        ExerciseRecord, Exercise.id == ExerciseRecord.exercise_id
-    ).filter(
-        ExerciseRecord.user_id == user_id
-    ).group_by(Exercise.subject).all()
+    try:
+        results = db.query(
+            Exercise.subject,
+            func.count(ExerciseRecord.id).label("total"),
+            func.sum(case((ExerciseRecord.is_correct == True, 1), else_=0)).label("correct")
+        ).join(
+            ExerciseRecord, Exercise.id == ExerciseRecord.exercise_id
+        ).filter(
+            ExerciseRecord.user_id == user_id
+        ).group_by(Exercise.subject).all()
 
-    items = []
-    for subject, total, correct in results:
-        total = total or 0
-        correct = correct or 0
-        accuracy_rate = (correct / total * 100) if total > 0 else 0.0
-        items.append({
-            "subject": subject,
-            "total_exercises": total,
-            "correct_count": correct,
-            "accuracy_rate": round(accuracy_rate, 2)
-        })
+        items = []
+        for subject, total, correct in results:
+            total = int(total or 0)
+            correct = int(correct or 0)
+            accuracy_rate = (correct / total * 100) if total > 0 else 0.0
+            items.append({
+                "subject": subject,
+                "total_exercises": total,
+                "correct_count": correct,
+                "accuracy_rate": round(accuracy_rate, 2)
+            })
 
-    return {"items": items}
+        return {"items": items}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/weak-points", response_model=WeakPointsResponse)
@@ -166,7 +171,7 @@ async def get_weak_points(
     exercise_stats = db.query(
         Exercise.knowledge_point,
         func.count(ExerciseRecord.id).label("total"),
-        func.sum(func.case([(ExerciseRecord.is_correct == False, 1)], else_=0)).label("wrong")
+        func.sum(case((ExerciseRecord.is_correct == False, 1), else_=0)).label("wrong")
     ).join(
         Exercise, Exercise.id == ExerciseRecord.exercise_id
     ).filter(
@@ -191,25 +196,26 @@ async def get_weak_points(
         if not kp:
             continue
         stats_map[kp] = {
-            "total_attempts": total or 0,
-            "wrong_count": wrong or 0
+            "total_attempts": int(total or 0),
+            "wrong_count": int(wrong or 0)
         }
 
     for kp, wrong in mistake_stats:
         if not kp:
             continue
+        wrong = int(wrong or 0)
         if kp in stats_map:
-            stats_map[kp]["wrong_count"] += wrong or 0
+            stats_map[kp]["wrong_count"] += wrong
         else:
             stats_map[kp] = {
-                "total_attempts": wrong or 0,
-                "wrong_count": wrong or 0
+                "total_attempts": wrong,
+                "wrong_count": wrong
             }
 
     items = []
     for kp, data in stats_map.items():
-        total = data["total_attempts"]
-        wrong = data["wrong_count"]
+        total = int(data["total_attempts"])
+        wrong = int(data["wrong_count"])
         error_rate = (wrong / total * 100) if total > 0 else 0.0
         items.append({
             "knowledge_point": kp,

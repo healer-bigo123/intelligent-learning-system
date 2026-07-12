@@ -40,9 +40,19 @@
     </div>
 
     <!-- 课程网格 -->
-    <div class="courses-grid">
-      <div v-for="course in filteredCourses" :key="course.id" class="course-card">
+    <div v-if="loading" class="loading-state">加载中...</div>
+    <div v-else-if="sortedCourses.length === 0" class="empty-state">暂无学习资料</div>
+    <div v-else class="courses-grid">
+      <div v-for="course in sortedCourses" :key="course.id" class="course-card">
         <div class="course-cover" :style="{ background: course.coverColor }">
+          <button
+            class="favorite-btn"
+            :class="{ favorited: favoriteMap[course.id]?.isFavorited }"
+            @click="toggleFavorite(course, $event)"
+            title="收藏"
+          >
+            <component :is="icons.Heart" class="favorite-icon" />
+          </button>
           <div class="cover-overlay">
             <button class="play-btn">
               <component :is="icons.Play" class="play-icon" />
@@ -102,8 +112,8 @@
     </div>
 
     <!-- 分页 -->
-    <div class="pagination">
-      <button class="page-btn" :disabled="currentPage === 1">
+    <div class="pagination" v-if="totalPages > 1">
+      <button class="page-btn" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">
         <component :is="icons.ChevronLeft" class="page-icon" />
       </button>
       <button
@@ -111,11 +121,11 @@
         :key="page"
         class="page-btn"
         :class="{ active: currentPage === page, dots: page === '...' }"
-        @click="currentPage = typeof page === 'number' ? page : currentPage"
+        @click="goToPage(page)"
       >
         {{ page }}
       </button>
-      <button class="page-btn" :disabled="currentPage === totalPages">
+      <button class="page-btn" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">
         <component :is="icons.ChevronRight" class="page-icon" />
       </button>
     </div>
@@ -123,12 +133,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import {
   Search, Play, Star, Flame, Users, Clock,
   User, ArrowRight, Plus, ChevronLeft, ChevronRight,
   BookOpen, Calculator, FlaskConical, Globe, Code, Music,
-  ArrowDown
+  ArrowDown, Heart
 } from 'lucide-vue-next'
 import { api } from '@/api/client'
 
@@ -136,7 +146,7 @@ const icons = {
   Search, Play, Star, Flame, Users, Clock,
   User, ArrowRight, Plus, ChevronLeft, ChevronRight,
   BookOpen, Calculator, FlaskConical, Globe, Code, Music,
-  ArrowDown
+  ArrowDown, Heart
 }
 
 const categoryTabs = [
@@ -155,7 +165,25 @@ const currentPage = ref(1)
 const pageSize = 6
 
 const courses = ref<any[]>([])
+const total = ref(0)
 const loading = ref(false)
+const favoriteMap = ref<Record<string, { isFavorited: boolean; favoriteId: number | null }>>({})
+
+const categoryMap: Record<string, string> = {
+  math: '数学',
+  physics: '物理',
+  chemistry: '化学',
+  english: '英语',
+  programming: '编程'
+}
+
+const colorMap: Record<string, string> = {
+  '数学': '#3b82f6',
+  '物理': '#10b981',
+  '化学': '#ef4444',
+  '英语': '#f59e0b',
+  '编程': '#8b5cf6'
+}
 
 // 从后端加载学习资料
 const loadResources = async () => {
@@ -165,53 +193,44 @@ const loadResources = async () => {
       page: currentPage.value,
       page_size: pageSize
     }
-    
-    // 映射分类
-    const categoryMap: Record<string, string> = {
-      math: '数学',
-      physics: '物理',
-      chemistry: '化学',
-      english: '英语',
-      programming: '编程'
-    }
-    
+
     if (activeCategory.value !== 'all') {
       params.subject = categoryMap[activeCategory.value] || activeCategory.value
     }
-    
+
     if (searchQuery.value) {
       params.keyword = searchQuery.value
     }
-    
+
     const response = await api.get('/study-materials', { params })
     const data = response.data
-    
-    // 转换数据格式
-    const colorMap: Record<string, string> = {
-      '数学': '#3b82f6',
-      '物理': '#10b981',
-      '化学': '#ef4444',
-      '英语': '#f59e0b',
-      '编程': '#8b5cf6'
-    }
-    
-    courses.value = (data.items || []).map((item: any, index: number) => ({
+
+    total.value = data.total || 0
+
+    courses.value = (data.items || []).map((item: any) => ({
       id: item.id,
       title: item.title,
       description: item.content?.substring(0, 50) + '...' || '暂无描述',
+      fullContent: item.content,
       category: item.subject,
       categoryId: Object.entries(categoryMap).find(([k, v]) => v === item.subject)?.[0] || 'math',
       coverColor: `linear-gradient(135deg, ${colorMap[item.subject] || '#6366f1'}, ${colorMap[item.subject] || '#6366f1'}dd)`,
       instructor: item.source || '系统',
       instructorColor: colorMap[item.subject] || '#6366f1',
       rating: 4.5,
-      students: '0',
+      students: item.views || 0,
       duration: `${item.difficulty || 1}级难度`,
       tags: [item.material_type, item.knowledge_point].filter(Boolean),
       isNew: false,
-      isPopular: false,
-      enrolled: false
+      isPopular: (item.views || 0) > 50,
+      enrolled: false,
+      views: item.views || 0,
+      created_at: item.created_at,
+      difficulty: item.difficulty || 1
     }))
+
+    // 加载收藏状态
+    await loadFavoriteStatus()
   } catch (error) {
     console.error('加载学习资料失败:', error)
   } finally {
@@ -219,37 +238,132 @@ const loadResources = async () => {
   }
 }
 
-const filteredCourses = computed(() => {
-  return courses.value
+// 加载收藏状态
+const loadFavoriteStatus = async () => {
+  if (courses.value.length === 0) return
+
+  try {
+    // 先获取用户的所有收藏
+    const response = await api.get('/favorites?target_type=study_material&page_size=100')
+    const favorites = response.data?.items || []
+
+    const map: Record<string, { isFavorited: boolean; favoriteId: number | null }> = {}
+    courses.value.forEach(course => {
+      const fav = favorites.find((f: any) => f.target_id === course.id)
+      map[course.id] = {
+        isFavorited: !!fav,
+        favoriteId: fav?.id || null
+      }
+    })
+
+    favoriteMap.value = map
+  } catch (error) {
+    console.error('加载收藏状态失败:', error)
+  }
+}
+
+// 切换收藏状态
+const toggleFavorite = async (course: any, event: Event) => {
+  event.stopPropagation()
+
+  const current = favoriteMap.value[course.id]
+  if (!current) return
+
+  try {
+    if (current.isFavorited) {
+      // 取消收藏
+      if (current.favoriteId) {
+        await api.delete(`/favorites/${current.favoriteId}`)
+      }
+      favoriteMap.value[course.id] = { isFavorited: false, favoriteId: null }
+    } else {
+      // 添加收藏
+      const response = await api.post('/favorites', {
+        target_type: 'study_material',
+        target_id: course.id
+      })
+      favoriteMap.value[course.id] = {
+        isFavorited: true,
+        favoriteId: response.data.id
+      }
+    }
+  } catch (error) {
+    console.error('收藏操作失败:', error)
+    alert('收藏操作失败，请重试')
+  }
+}
+
+// 本地排序 - 各排序方式差异明显
+const sortedCourses = computed(() => {
+  const list = [...courses.value]
+  switch (sortBy.value) {
+    case 'latest':
+      // 最新发布：严格按时间倒序
+      return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    case 'popular':
+      // 最受欢迎：严格按浏览量倒序，相同浏览量按时间倒序
+      return list.sort((a, b) => {
+        if (b.views !== a.views) return b.views - a.views
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      })
+    case 'duration':
+      // 时长最短（难度最低优先）：1级难度在最前，5级在最后
+      return list.sort((a, b) => a.difficulty - b.difficulty)
+    case 'recommend':
+    default:
+      // 推荐：综合评分，权重差异大
+      // 分数 = 浏览量 * 10 + 难度 * 5 + 时间衰减分
+      return list.sort((a, b) => {
+        const getScore = (item: any) => {
+          const daysSinceCreated = Math.max(
+            0,
+            (Date.now() - new Date(item.created_at).getTime()) / (1000 * 60 * 60 * 24)
+          )
+          const timeScore = Math.max(0, 50 - daysSinceCreated) // 越新分数越高，最高50
+          return item.views * 10 + item.difficulty * 5 + timeScore
+        }
+        return getScore(b) - getScore(a)
+      })
+  }
 })
 
-const totalPages = computed(() => Math.ceil(courses.value.length / pageSize))
+const totalPages = computed(() => Math.ceil(total.value / pageSize))
 
 const visiblePages = computed(() => {
   const pages: (number | string)[] = []
-  const total = totalPages.value
+  const totalPagesValue = totalPages.value
   const current = currentPage.value
 
-  if (total <= 5) {
-    for (let i = 1; i <= total; i++) pages.push(i)
+  if (totalPagesValue <= 5) {
+    for (let i = 1; i <= totalPagesValue; i++) pages.push(i)
   } else {
     if (current <= 3) {
-      pages.push(1, 2, 3, 4, '...', total)
-    } else if (current >= total - 2) {
-      pages.push(1, '...', total - 3, total - 2, total - 1, total)
+      pages.push(1, 2, 3, 4, '...', totalPagesValue)
+    } else if (current >= totalPagesValue - 2) {
+      pages.push(1, '...', totalPagesValue - 3, totalPagesValue - 2, totalPagesValue - 1, totalPagesValue)
     } else {
-      pages.push(1, '...', current - 1, current, current + 1, '...', total)
+      pages.push(1, '...', current - 1, current, current + 1, '...', totalPagesValue)
     }
   }
 
   return pages
 })
 
+const goToPage = (page: number | string) => {
+  if (typeof page !== 'number' || page === currentPage.value) return
+  currentPage.value = page
+  loadResources()
+}
+
 // 监听筛选条件变化
-import { watch } from 'vue'
 watch([activeCategory, searchQuery], () => {
   currentPage.value = 1
   loadResources()
+})
+
+// 监听排序变化（本地排序，不需要重新请求）
+watch(sortBy, () => {
+  // 排序是本地实现的，切换时自动生效
 })
 
 onMounted(() => {
@@ -756,5 +870,56 @@ onMounted(() => {
     width: 14px;
     height: 14px;
   }
+}
+
+.favorite-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 2;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
+  }
+
+  &.favorited {
+    background: rgba(239, 68, 68, 0.9);
+
+    &:hover {
+      background: rgba(239, 68, 68, 1);
+    }
+
+    .favorite-icon {
+      fill: white;
+      color: white;
+    }
+  }
+
+  .favorite-icon {
+    width: 16px;
+    height: 16px;
+    color: white;
+  }
+}
+
+.loading-state,
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
 }
 </style>

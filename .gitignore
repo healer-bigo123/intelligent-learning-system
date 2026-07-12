@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual Environment
+venv/
+venv_old/
+.env/
+.venv/
+env/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite3
+*.db-journal
+
+# Logs
+logs/
+*.log
+
+# Cache
+.cache/
+.pytest_cache/
+.mypy_cache/
+
+# Build artifacts
+*.pyc
+*.pyo
+dist-packages/
+dist-packages.zip
+*.lnk
+
+# Temporary files
+*.tmp
+*.bak
+
+# Data files (large binary)
+data/smart_learning.db
+data/simple_vector.db
+app.db
+
+# Test reports
+test_report_*.md
+database_check_report_*.md

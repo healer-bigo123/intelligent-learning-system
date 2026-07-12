@@ -16,7 +16,7 @@ from app.models.database import (
     Achievement, LearningPath, Classroom, ClassroomMember,
     LearningResource, StudyActivity, Notification, UserAchievement,
     ExerciseRecord, ExerciseSession, MindMap, AssessmentReport,
-    LearningWebsite, StudentProfile, Favorite,
+    LearningWebsite, StudentProfile, Favorite, Task,
     init_db
 )
 from app.core.security import get_password_hash
@@ -124,6 +124,7 @@ def create_study_materials(db: Session):
     print("[INIT] 创建学习资料...")
 
     materials = [
+        # 数学（5条）
         {
             "user_id": "user-001",
             "title": "三角函数诱导公式大全",
@@ -150,6 +151,43 @@ def create_study_materials(db: Session):
         },
         {
             "user_id": "user-001",
+            "title": "等差数列与等比数列",
+            "content": "等差数列：相邻两项的差相等。\n通项公式：aₙ = a₁ + (n-1)d\n求和公式：Sₙ = n(a₁+aₙ)/2 = na₁ + n(n-1)d/2\n\n等比数列：相邻两项的比相等。\n通项公式：aₙ = a₁q^(n-1)\n求和公式：Sₙ = a₁(1-qⁿ)/(1-q) (q≠1)\n\n应用场景：\n- 等差：阶梯电价、等速增长\n- 等比：复利计算、细菌繁殖",
+            "subject": "数学",
+            "grade": "高二",
+            "material_type": "知识点",
+            "knowledge_point": "数列",
+            "tags": "高考,重点,公式",
+            "source": "人教版教材",
+            "difficulty": 3,
+        },
+        {
+            "user_id": "user-001",
+            "title": "函数单调性判断方法",
+            "content": "函数单调性定义：\n- 增函数：在区间内，x₁<x₂ 时 f(x₁)<f(x₂)\n- 减函数：在区间内，x₁<x₂ 时 f(x₁)>f(x₂)\n\n判断方法：\n1. 定义法：作差 f(x₁)-f(x₂)，判断正负\n2. 导数法：f'(x)>0 则增，f'(x)<0 则减\n3. 图像法：观察图像走势\n4. 复合函数：同增异减\n\n注意：单调区间不能用并集连接。",
+            "subject": "数学",
+            "grade": "高一",
+            "material_type": "知识点",
+            "knowledge_point": "函数性质",
+            "tags": "高考,重点,方法",
+            "source": "整理",
+            "difficulty": 3,
+        },
+        {
+            "user_id": "user-001",
+            "title": "立体几何中的线面关系",
+            "content": "直线与平面的位置关系：\n1. 直线在平面内：有无数公共点\n2. 直线与平面相交：有且只有一个公共点\n3. 直线与平面平行：没有公共点\n\n判定定理：\n- 线面平行：平面外一条直线与平面内一条直线平行，则线面平行\n- 线面垂直：一条直线与平面内两条相交直线都垂直，则线面垂直\n\n性质定理：\n- 线面平行：过这条直线的平面与原平面交线平行于该直线\n- 线面垂直：垂直于同一平面的两条直线互相平行",
+            "subject": "数学",
+            "grade": "高二",
+            "material_type": "知识点",
+            "knowledge_point": "立体几何",
+            "tags": "高考,重点,定理",
+            "source": "人教版教材",
+            "difficulty": 4,
+        },
+        # 英语（5条）
+        {
+            "user_id": "user-001",
             "title": "英语时态总结：一般现在时 vs 现在进行时",
             "content": "一般现在时：\n- 表示经常性、习惯性的动作\n- 结构：主语 + 动词原形/第三人称单数\n- 例句：I play basketball every day.\n\n现在进行时：\n- 表示此时此刻正在进行的动作\n- 结构：主语 + am/is/are + doing\n- 例句：I am playing basketball now.\n\n时间标志词：\n- 一般现在时：always, usually, often, every day\n- 现在进行时：now, at the moment, look, listen",
             "subject": "英语",
@@ -160,6 +198,55 @@ def create_study_materials(db: Session):
             "source": "网络整理",
             "difficulty": 1,
         },
+        {
+            "user_id": "user-001",
+            "title": "现在完成时用法详解",
+            "content": "现在完成时表示过去发生的动作对现在造成的影响，或从过去持续到现在的动作。\n\n结构：have/has + 过去分词\n\n用法：\n1. 表示已完成：I have finished my homework.\n2. 表示经历：Have you ever been to Beijing?\n3. 表示持续：I have lived here for 10 years.\n\n时间标志词：\n- already, yet, ever, never, just\n- for + 时间段，since + 时间点",
+            "subject": "英语",
+            "grade": "初二",
+            "material_type": "知识点",
+            "knowledge_point": "现在完成时",
+            "tags": "中考,语法,重点",
+            "source": "课堂笔记",
+            "difficulty": 2,
+        },
+        {
+            "user_id": "user-001",
+            "title": "被动语态结构总结",
+            "content": "被动语态强调动作的承受者。\n\n基本结构：be + 过去分词\n\n各时态被动语态：\n1. 一般现在时：am/is/are + done\n2. 一般过去时：was/were + done\n3. 现在进行时：am/is/are being + done\n4. 现在完成时：have/has been + done\n5. 情态动词：can/may/must be + done\n\n例句：\n主动：Tom wrote the book.\n被动：The book was written by Tom.",
+            "subject": "英语",
+            "grade": "初三",
+            "material_type": "知识点",
+            "knowledge_point": "被动语态",
+            "tags": "中考,语法,重点",
+            "source": "整理",
+            "difficulty": 2,
+        },
+        {
+            "user_id": "user-001",
+            "title": "宾语从句连接词用法",
+            "content": "宾语从句是在主句中作宾语的从句。\n\n连接词：\n1. that：无意义，可省略（陈述句作宾语从句）\n   I think (that) he is right.\n2. if/whether：是否（一般疑问句作宾语从句）\n   I don't know if he will come.\n3. 特殊疑问词：what, where, when, why, how\n   Can you tell me where he lives?\n\n语序：宾语从句必须用陈述句语序。\n时态：主句过去时，从句用相应过去时；客观真理用一般现在时。",
+            "subject": "英语",
+            "grade": "初三",
+            "material_type": "知识点",
+            "knowledge_point": "宾语从句",
+            "tags": "中考,语法,重点",
+            "source": "人教版教材",
+            "difficulty": 3,
+        },
+        {
+            "user_id": "user-001",
+            "title": "英语阅读理解技巧",
+            "content": "阅读理解常见题型及解题技巧：\n\n1. 主旨大意题\n   - 关注首尾段、各段首句\n   - 避免以偏概全\n\n2. 细节理解题\n   - 根据关键词定位原文\n   - 注意同义替换\n\n3. 词义猜测题\n   - 利用上下文线索\n   - 利用构词法\n\n4. 推理判断题\n   - 不要选原文直接陈述的选项\n   - 基于原文合理推断\n\n做题顺序：先看题目，再读文章，带着问题找答案。",
+            "subject": "英语",
+            "grade": "高中",
+            "material_type": "方法",
+            "knowledge_point": "阅读理解",
+            "tags": "高考,技巧,方法",
+            "source": "网络",
+            "difficulty": 2,
+        },
+        # 物理（5条）
         {
             "user_id": "user-001",
             "title": "牛顿三大定律",
@@ -174,6 +261,55 @@ def create_study_materials(db: Session):
         },
         {
             "user_id": "user-001",
+            "title": "匀变速直线运动公式",
+            "content": "基本公式：\n1. v = v₀ + at\n2. x = v₀t + ½at²\n3. v² - v₀² = 2ax\n4. x = (v₀+v)t/2\n\n适用条件：加速度恒定的直线运动。\n\n常用推论：\n- 相邻相等时间间隔位移差：Δx = aT²\n- 中间时刻瞬时速度等于平均速度\n\n注意：\n- 先规定正方向\n- 矢量性：速度与加速度同向加速，反向减速",
+            "subject": "物理",
+            "grade": "高一",
+            "material_type": "公式",
+            "knowledge_point": "运动学",
+            "tags": "高考,重点,公式",
+            "source": "课堂笔记",
+            "difficulty": 2,
+        },
+        {
+            "user_id": "user-001",
+            "title": "圆周运动基本概念",
+            "content": "描述圆周运动的物理量：\n1. 线速度 v = 2πr/T\n2. 角速度 ω = 2π/T = v/r\n3. 周期 T：转动一周所需时间\n4. 转速 n：单位时间转过的圈数\n5. 向心加速度 a = v²/r = ω²r\n6. 向心力 F = mv²/r = mω²r\n\n注意：\n- 向心力是效果力，由具体力提供\n- 匀速圆周运动速度大小不变，方向时刻改变\n- 向心力只改变速度方向，不改变速度大小",
+            "subject": "物理",
+            "grade": "高一",
+            "material_type": "知识点",
+            "knowledge_point": "圆周运动",
+            "tags": "高考,重点,概念",
+            "source": "人教版教材",
+            "difficulty": 3,
+        },
+        {
+            "user_id": "user-001",
+            "title": "机械能守恒定律",
+            "content": "机械能 = 动能 + 重力势能 + 弹性势能\n\n机械能守恒条件：\n只有重力或弹力做功，其他力不做功或做功代数和为零。\n\n表达式：\nEₖ₁ + Eₚ₁ = Eₖ₂ + Eₚ₂\n或 ΔEₖ = -ΔEₚ\n\n应用步骤：\n1. 确定研究对象和过程\n2. 判断机械能是否守恒\n3. 选择参考平面\n4. 列出初末状态机械能相等的方程\n\n注意：有摩擦力做功时机械能不守恒。",
+            "subject": "物理",
+            "grade": "高一",
+            "material_type": "知识点",
+            "knowledge_point": "机械能",
+            "tags": "高考,重点,定律",
+            "source": "整理",
+            "difficulty": 3,
+        },
+        {
+            "user_id": "user-001",
+            "title": "电场强度与电势",
+            "content": "电场强度 E：\n- 定义：E = F/q\n- 方向：正电荷受力方向\n- 点电荷电场：E = kQ/r²\n\n电势 φ：\n- 定义：单位正电荷在电场中某点的电势能\n- 电势差 U = φ₁ - φ₂\n- 电场力做功 W = qU\n\n关系：\n- 沿电场线方向电势降低\n- 电场线密集处电场强度大\n- 等势面与电场线垂直",
+            "subject": "物理",
+            "grade": "高二",
+            "material_type": "知识点",
+            "knowledge_point": "电场",
+            "tags": "高考,重点,概念",
+            "source": "人教版教材",
+            "difficulty": 4,
+        },
+        # 化学（5条）
+        {
+            "user_id": "user-001",
             "title": "化学方程式配平方法",
             "content": "1. 最小公倍数法\n找出左右两边各出现一次且原子个数相差较大的元素，求最小公倍数。\n\n2. 奇数配偶法\n某元素在方程式两边一奇一偶时，将奇数配成偶数。\n\n3. 观察法\n从复杂的化学式入手，推断其他物质的系数。\n\n4. 归一法\n令最复杂物质的系数为1，再推导其他物质。\n\n例：配平 C₂H₆ + O₂ → CO₂ + H₂O\n解：令 C₂H₆ 系数为 1，则 CO₂ 为 2，H₂O 为 3，O₂ 为 7/2，同乘 2 得：\n2C₂H₆ + 7O₂ → 4CO₂ + 6H₂O",
             "subject": "化学",
@@ -184,6 +320,55 @@ def create_study_materials(db: Session):
             "source": "整理",
             "difficulty": 3,
         },
+        {
+            "user_id": "user-001",
+            "title": "物质的量与摩尔质量",
+            "content": "物质的量 n：表示含有一定数目粒子的集合体，单位 mol。\n\n阿伏伽德罗常数：Nₐ ≈ 6.02×10²³ mol⁻¹\n\n公式：\n1. n = N/Nₐ\n2. n = m/M\n3. 标准状况下气体体积 V = n × 22.4 L/mol\n\n摩尔质量 M：单位物质的量的物质所具有的质量，单位 g/mol。\n数值上等于相对原子质量或相对分子质量。\n\n例：H₂O 的摩尔质量 = 18 g/mol",
+            "subject": "化学",
+            "grade": "高一",
+            "material_type": "知识点",
+            "knowledge_point": "物质的量",
+            "tags": "高考,基础,计算",
+            "source": "人教版教材",
+            "difficulty": 2,
+        },
+        {
+            "user_id": "user-001",
+            "title": "氧化还原反应判断",
+            "content": "氧化还原反应本质：电子转移（得失或偏移）。\n\n判断方法：\n1. 化合价升降法：有元素化合价变化的反应\n2. 单质参与法：有单质参加或生成的反应一般是氧化还原反应\n\n相关概念：\n- 氧化剂：得电子，化合价降低，被还原\n- 还原剂：失电子，化合价升高，被氧化\n- 氧化反应：失电子，化合价升高\n- 还原反应：得电子，化合价降低\n\n记忆口诀：升失氧，降得还。",
+            "subject": "化学",
+            "grade": "高一",
+            "material_type": "知识点",
+            "knowledge_point": "氧化还原",
+            "tags": "高考,重点,判断",
+            "source": "课堂笔记",
+            "difficulty": 3,
+        },
+        {
+            "user_id": "user-001",
+            "title": "元素周期律应用",
+            "content": "元素周期律：元素的性质随原子序数的递增而呈周期性变化。\n\n同周期（从左到右）：\n- 原子半径减小\n- 金属性减弱，非金属性增强\n- 最高价氧化物对应水化物酸性增强\n\n同主族（从上到下）：\n- 原子半径增大\n- 金属性增强，非金属性减弱\n- 气态氢化物稳定性减弱\n\n应用：\n- 预测元素性质\n- 比较金属性/非金属性强弱\n- 判断化合物酸碱性",
+            "subject": "化学",
+            "grade": "高一",
+            "material_type": "知识点",
+            "knowledge_point": "元素周期律",
+            "tags": "高考,重点,规律",
+            "source": "人教版教材",
+            "difficulty": 3,
+        },
+        {
+            "user_id": "user-001",
+            "title": "酸碱盐性质总结",
+            "content": "酸：电离时生成的阳离子全部是 H⁺ 的化合物。\n- 通性：与指示剂、活泼金属、金属氧化物、碱、盐反应\n\n碱：电离时生成的阴离子全部是 OH⁻ 的化合物。\n- 通性：与指示剂、非金属氧化物、酸、盐反应\n\n盐：由金属离子（或铵根）和酸根离子组成的化合物。\n- 性质：与酸、碱、盐反应，部分可分解\n\n复分解反应条件：生成沉淀、气体或水。\n\n常见沉淀：AgCl、BaSO₄、CaCO₃、Cu(OH)₂、Fe(OH)₃",
+            "subject": "化学",
+            "grade": "初三",
+            "material_type": "知识点",
+            "knowledge_point": "酸碱盐",
+            "tags": "中考,重点,性质",
+            "source": "整理",
+            "difficulty": 2,
+        },
+        # 生物（5条）
         {
             "user_id": "user-001",
             "title": "细胞的基本结构",
@@ -198,40 +383,193 @@ def create_study_materials(db: Session):
         },
         {
             "user_id": "user-001",
-            "title": "中国朝代顺序歌",
-            "content": "夏商与西周，东周分两段。\n春秋和战国，一统秦两汉。\n三分魏蜀吴，二晋前后延。\n南北朝并立，隋唐五代传。\n宋元明清后，皇朝至此完。\n\n重要朝代记忆点：\n- 夏朝：中国第一个奴隶制王朝\n- 秦朝：第一个统一的封建王朝，秦始皇\n- 唐朝：贞观之治、开元盛世\n- 宋朝：经济文化繁荣，但军事较弱\n- 明朝：郑和下西洋\n- 清朝：中国最后一个封建王朝",
-            "subject": "历史",
-            "grade": "初一",
-            "material_type": "笔记",
-            "knowledge_point": "朝代",
-            "tags": "基础,记忆,口诀",
-            "source": "网络",
+            "title": "光合作用与呼吸作用",
+            "content": "光合作用：\n- 场所：叶绿体\n- 条件：光、色素、酶\n- 反应式：6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂\n- 意义：将光能转化为化学能，合成有机物\n\n呼吸作用：\n- 有氧呼吸：细胞质基质、线粒体\n  C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + 能量\n- 无氧呼吸：细胞质基质\n  产生酒精和 CO₂ 或乳酸\n\n关系：光合作用储存能量，呼吸作用释放能量。",
+            "subject": "生物",
+            "grade": "高一",
+            "material_type": "知识点",
+            "knowledge_point": "代谢",
+            "tags": "高考,重点,对比",
+            "source": "人教版教材",
+            "difficulty": 2,
+        },
+        {
+            "user_id": "user-001",
+            "title": "DNA复制与遗传",
+            "content": "DNA 复制：\n- 时间：细胞分裂间期\n- 条件：模板、原料、能量、酶\n- 特点：半保留复制、边解旋边复制\n- 结果：1 个 DNA 分子复制成 2 个完全相同的 DNA 分子\n\n遗传信息的传递：\n- DNA → RNA → 蛋白质\n- 转录：以 DNA 一条链为模板合成 RNA\n- 翻译：以 mRNA 为模板合成蛋白质\n\n基因：有遗传效应的 DNA 片段。",
+            "subject": "生物",
+            "grade": "高二",
+            "material_type": "知识点",
+            "knowledge_point": "遗传",
+            "tags": "高考,重点,遗传",
+            "source": "人教版教材",
+            "difficulty": 3,
+        },
+        {
+            "user_id": "user-001",
+            "title": "生态系统能量流动",
+            "content": "能量流动的特点：\n1. 单向流动：只能从第一营养级流向更高营养级\n2. 逐级递减：相邻营养级间能量传递效率约 10%-20%\n\n能量流动过程：\n- 生产者固定太阳能\n- 初级消费者摄食生产者\n- 次级消费者摄食初级消费者\n- 各营养级通过呼吸作用散失热能\n\n应用：\n- 合理设计食物链，提高能量利用率\n- 农业生态系统中实现物质循环利用",
+            "subject": "生物",
+            "grade": "高二",
+            "material_type": "知识点",
+            "knowledge_point": "生态系统",
+            "tags": "高考,重点,能量",
+            "source": "整理",
+            "difficulty": 2,
+        },
+        {
+            "user_id": "user-001",
+            "title": "人体免疫系统",
+            "content": "免疫系统的三道防线：\n1. 第一道：皮肤、黏膜\n2. 第二道：体液中的杀菌物质和吞噬细胞\n3. 第三道：免疫器官和免疫细胞（特异性免疫）\n\n特异性免疫：\n- 体液免疫：B 细胞产生抗体，消灭抗原\n- 细胞免疫：T 细胞直接杀伤靶细胞\n\n免疫失调：\n- 过敏反应：已免疫机体再次接触过敏原\n- 自身免疫病：免疫系统攻击自身组织\n- 免疫缺陷病：如艾滋病",
+            "subject": "生物",
+            "grade": "高二",
+            "material_type": "知识点",
+            "knowledge_point": "免疫",
+            "tags": "高考,重点,人体",
+            "source": "人教版教材",
+            "difficulty": 3,
+        },
+        # 编程（5条）
+        {
+            "user_id": "user-001",
+            "title": "Python 变量与数据类型",
+            "content": "Python 是一门简洁优雅的编程语言，适合初学者入门。\n\n变量：\n- 变量是存储数据的容器\n- 命名规则：字母、数字、下划线，不能以数字开头\n- 例：name = \"Alice\"，age = 18\n\n基本数据类型：\n1. int：整数，如 10、-5\n2. float：浮点数，如 3.14、-0.5\n3. str：字符串，如 \"Hello\"\n4. bool：布尔值，True 或 False\n5. list：列表，如 [1, 2, 3]\n6. dict：字典，如 {\"name\": \"Tom\", \"age\": 20}\n\n使用 type() 函数可以查看变量类型。",
+            "subject": "编程",
+            "grade": "入门",
+            "material_type": "知识点",
+            "knowledge_point": "Python基础",
+            "tags": "编程,Python,入门",
+            "source": "在线教程",
             "difficulty": 1,
         },
         {
             "user_id": "user-001",
-            "title": "Python 列表推导式",
-            "content": "列表推导式是 Python 中简洁创建列表的方式。\n\n基本语法：\n[表达式 for 变量 in 可迭代对象 if 条件]\n\n示例：\n1. 创建平方数列表\n   squares = [x**2 for x in range(10)]\n   # [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]\n\n2. 筛选偶数\n   evens = [x for x in range(20) if x % 2 == 0]\n\n3. 嵌套循环\n   pairs = [(x, y) for x in range(3) for y in range(3)]\n\n优点：代码简洁、执行效率高\n注意：过于复杂的推导式会降低可读性",
+            "title": "条件语句与循环结构",
+            "content": "条件语句和循环是程序控制流程的基础。\n\n条件语句 if-elif-else：\n```python\nscore = 85\nif score >= 90:\n    print(\"优秀\")\nelif score >= 60:\n    print(\"及格\")\nelse:\n    print(\"不及格\")\n```\n\nfor 循环：\n```python\nfor i in range(5):\n    print(i)  # 输出 0,1,2,3,4\n```\n\nwhile 循环：\n```python\ncount = 0\nwhile count < 5:\n    print(count)\n    count += 1\n```\n\n注意缩进：Python 使用缩进来表示代码块。",
             "subject": "编程",
-            "grade": "大学",
+            "grade": "入门",
             "material_type": "知识点",
-            "knowledge_point": "Python基础",
-            "tags": "编程,Python,技巧",
-            "source": "教程",
+            "knowledge_point": "流程控制",
+            "tags": "编程,Python,控制流",
+            "source": "在线教程",
+            "difficulty": 1,
+        },
+        {
+            "user_id": "user-001",
+            "title": "函数定义与调用",
+            "content": "函数是组织好的、可重复使用的代码块。\n\n定义函数：\n```python\ndef greet(name):\n    return \"Hello, \" + name\n```\n\n调用函数：\n```python\nmessage = greet(\"Alice\")\nprint(message)  # Hello, Alice\n```\n\n函数参数：\n- 位置参数：按顺序传入\n- 默认参数：def add(a, b=10)\n- 关键字参数：add(a=3, b=5)\n- 可变参数：*args 和 **kwargs\n\n返回值：使用 return 返回结果，可以返回多个值（实际是元组）。",
+            "subject": "编程",
+            "grade": "入门",
+            "material_type": "知识点",
+            "knowledge_point": "函数",
+            "tags": "编程,Python,函数",
+            "source": "在线教程",
             "difficulty": 2,
         },
+        {
+            "user_id": "user-001",
+            "title": "列表与字典操作",
+            "content": "列表和字典是 Python 中最常用的数据结构。\n\n列表（list）：有序可变集合\n```python\nfruits = [\"apple\", \"banana\", \"cherry\"]\nfruits.append(\"orange\")  # 添加元素\nfruits[0]  # 访问第一个元素\nlen(fruits)  # 获取长度\n```\n\n字典（dict）：键值对集合\n```python\nstudent = {\"name\": \"Tom\", \"age\": 18}\nstudent[\"name\"]  # 访问值\nstudent[\"grade\"] = \"A\"  # 添加键值对\nstudent.keys()  # 获取所有键\n```\n\n列表推导式：\n```python\nsquares = [x**2 for x in range(10)]\n```",
+            "subject": "编程",
+            "grade": "入门",
+            "material_type": "知识点",
+            "knowledge_point": "数据结构",
+            "tags": "编程,Python,数据结构",
+            "source": "在线教程",
+            "difficulty": 2,
+        },
+        {
+            "user_id": "user-001",
+            "title": "面向对象编程基础",
+            "content": "面向对象编程（OOP）是一种重要的编程思想。\n\n核心概念：\n1. 类（Class）：对象的模板\n2. 对象（Object）：类的实例\n3. 属性（Attribute）：对象的数据\n4. 方法（Method）：对象的行为\n\n示例：\n```python\nclass Dog:\n    def __init__(self, name):\n        self.name = name\n    \n    def bark(self):\n        return f\"{self.name} says woof!\"\n\nmy_dog = Dog(\"Buddy\")\nprint(my_dog.bark())\n```\n\n三大特性：\n- 封装：将数据和方法包装在一起\n- 继承：子类继承父类的属性和方法\n- 多态：不同对象对同一消息作出不同响应",
+            "subject": "编程",
+            "grade": "进阶",
+            "material_type": "知识点",
+            "knowledge_point": "面向对象",
+            "tags": "编程,Python,OOP",
+            "source": "在线教程",
+            "difficulty": 3,
+        },
+        {
+            "user_id": "user-001",
+            "title": "Python 异常处理机制",
+            "content": "异常处理是编写健壮程序的重要技能。\n\n基本语法：\n```python\ntry:\n    result = 10 / 0\nexcept ZeroDivisionError:\n    print(\"不能除以零\")\nfinally:\n    print(\"无论是否异常都会执行\")\n```\n\n常见异常类型：\n- SyntaxError：语法错误\n- TypeError：类型错误\n- ValueError：值错误\n- IndexError：索引越界\n- KeyError：字典中不存在该键\n- FileNotFoundError：文件不存在\n\n自定义异常：\n```python\nclass ValidationError(Exception):\n    pass\n```",
+            "subject": "编程",
+            "grade": "进阶",
+            "material_type": "知识点",
+            "knowledge_point": "异常处理",
+            "tags": "编程,Python,调试",
+            "source": "在线教程",
+            "difficulty": 3,
+        },
+        {
+            "user_id": "user-001",
+            "title": "文件读写与上下文管理",
+            "content": "文件操作是编程中常用的技能。\n\n基本文件读写：\n```python\n# 读取文件\nwith open('data.txt', 'r', encoding='utf-8') as f:\n    content = f.read()\n\n# 写入文件\nwith open('output.txt', 'w', encoding='utf-8') as f:\n    f.write('Hello, World!')\n```\n\n打开模式：\n- 'r'：只读\n- 'w'：写入（覆盖）\n- 'a'：追加\n- 'b'：二进制模式\n\n上下文管理器 with 可以自动关闭文件，避免资源泄漏。\n\nJSON 文件操作：\n```python\nimport json\nwith open('data.json', 'r', encoding='utf-8') as f:\n    data = json.load(f)\n```",
+            "subject": "编程",
+            "grade": "进阶",
+            "material_type": "知识点",
+            "knowledge_point": "文件操作",
+            "tags": "编程,Python,IO",
+            "source": "在线教程",
+            "difficulty": 3,
+        },
+        {
+            "user_id": "user-001",
+            "title": "Python 模块与包管理",
+            "content": "模块和包帮助我们组织和管理代码。\n\n模块：\n- 一个 .py 文件就是一个模块\n- 使用 import 导入模块\n- 使用 from module import name 导入特定内容\n\n包：\n- 包含 __init__.py 的文件夹\n- 用于组织多个模块\n\n常用标准库：\n- os：操作系统接口\n- sys：系统相关\n- datetime：日期时间\n- json：JSON 数据处理\n- re：正则表达式\n- math：数学运算\n\n安装第三方库：\n```bash\npip install requests\n```",
+            "subject": "编程",
+            "grade": "进阶",
+            "material_type": "知识点",
+            "knowledge_point": "模块化",
+            "tags": "编程,Python,工程化",
+            "source": "在线教程",
+            "difficulty": 3,
+        },
+        {
+            "user_id": "user-001",
+            "title": "正则表达式入门",
+            "content": "正则表达式是强大的文本匹配工具。\n\n常用元字符：\n- .：匹配任意单个字符\n- *：匹配前一个字符 0 次或多次\n- +：匹配前一个字符 1 次或多次\n- ?：匹配前一个字符 0 次或 1 次\n- ^：匹配字符串开头\n- $：匹配字符串结尾\n- []：匹配括号内任意字符\n- \\d：匹配数字\n- \\w：匹配字母、数字、下划线\n\nPython 中使用 re 模块：\n```python\nimport re\nresult = re.search(r'\\d+', 'age: 25')\nprint(result.group())  # 25\n```",
+            "subject": "编程",
+            "grade": "进阶",
+            "material_type": "知识点",
+            "knowledge_point": "正则表达式",
+            "tags": "编程,Python,文本处理",
+            "source": "在线教程",
+            "difficulty": 4,
+        },
+        {
+            "user_id": "user-001",
+            "title": "经典排序算法：冒泡与快速排序",
+            "content": "排序算法是计算机科学的基础。\n\n冒泡排序：\n- 重复遍历数组，相邻元素两两比较\n- 时间复杂度：O(n²)\n```python\ndef bubble_sort(arr):\n    n = len(arr)\n    for i in range(n):\n        for j in range(0, n-i-1):\n            if arr[j] > arr[j+1]:\n                arr[j], arr[j+1] = arr[j+1], arr[j]\n```\n\n快速排序：\n- 分治法：选择基准，将数组分为左右两部分\n- 平均时间复杂度：O(n log n)\n```python\ndef quick_sort(arr):\n    if len(arr) <= 1:\n        return arr\n    pivot = arr[len(arr)//2]\n    left = [x for x in arr if x < pivot]\n    middle = [x for x in arr if x == pivot]\n    right = [x for x in arr if x > pivot]\n    return quick_sort(left) + middle + quick_sort(right)\n```",
+            "subject": "编程",
+            "grade": "进阶",
+            "material_type": "知识点",
+            "knowledge_point": "算法基础",
+            "tags": "编程,算法,排序",
+            "source": "在线教程",
+            "difficulty": 4,
+        },
     ]
+
+    existing_count = db.query(StudyMaterial).count()
+
+    # 预定义浏览量，使排序差异明显
+    views_values = [50, 120, 30, 200, 80, 10, 150, 60, 90, 40, 180, 70, 20, 110, 140, 5, 160, 100, 45, 130, 25, 170, 85, 35, 190, 55, 15, 210, 95, 165, 75, 125, 230, 65, 115, 145, 175, 205, 135, 185]
 
     for i, m in enumerate(materials):
         existing = db.query(StudyMaterial).filter(StudyMaterial.title == m["title"]).first()
         if existing:
-            print(f"  [SKIP] 资料已存在: {m['title']}")
+            # 更新浏览量，使排序差异明显
+            existing.views = views_values[i % len(views_values)]
+            print(f"  [UPDATE] 更新资料浏览量: {m['title']} -> {existing.views}")
             continue
 
+        existing_count += 1
         material = StudyMaterial(
-            id=f"material-{i+1:03d}",
+            id=f"material-{existing_count:03d}",
             **m,
-            views=0,
+            views=views_values[i % len(views_values)],
             status="active",
             created_at=datetime.utcnow(),
         )
@@ -415,7 +753,61 @@ def create_mistakes(db: Session):
             "difficulty": 3,
             "status": "unsolved",
         },
+        {
+            "user_id": "user-001",
+            "subject": "英语",
+            "question": "选择正确的连接词：I don't know ______ he will come tomorrow.",
+            "correct_answer": "if / whether",
+            "user_answer": "that",
+            "analysis": "错误原因：宾语从句表示'是否'时，要用 if 或 whether 引导，that 无意义。",
+            "knowledge_point": "宾语从句",
+            "tags": "语法,连接词,易错",
+            "source": "单元测试",
+            "difficulty": 2,
+            "status": "reviewing",
+        },
+        {
+            "user_id": "user-001",
+            "subject": "物理",
+            "question": "一个物体在水平面上受到 20N 的水平拉力，移动了 5m，求拉力做的功。",
+            "correct_answer": "100 J",
+            "user_answer": "25 J",
+            "analysis": "错误原因：公式记错。功 W = Fs = 20N × 5m = 100J。",
+            "knowledge_point": "功的计算",
+            "tags": "公式,计算,易错",
+            "source": "作业",
+            "difficulty": 1,
+            "status": "unsolved",
+        },
+        {
+            "user_id": "user-001",
+            "subject": "化学",
+            "question": "计算 36g 水的物质的量是多少？（已知 H₂O 的摩尔质量为 18g/mol）",
+            "correct_answer": "2 mol",
+            "user_answer": "0.5 mol",
+            "analysis": "错误原因：公式用反了。n = m/M = 36g / 18g/mol = 2mol。",
+            "knowledge_point": "物质的量",
+            "tags": "计算,摩尔质量,易错",
+            "source": "课堂练习",
+            "difficulty": 1,
+            "status": "mastered",
+        },
+        {
+            "user_id": "user-001",
+            "subject": "生物",
+            "question": "绿色植物进行光合作用的场所是？",
+            "correct_answer": "叶绿体",
+            "user_answer": "线粒体",
+            "analysis": "错误原因：混淆了光合作用和呼吸作用的场所。光合作用在叶绿体进行，呼吸作用主要在线粒体进行。",
+            "knowledge_point": "光合作用",
+            "tags": "基础,场所,易错",
+            "source": "期中考试",
+            "difficulty": 1,
+            "status": "unsolved",
+        },
     ]
+
+    existing_count = db.query(Mistake).count()
 
     for i, m in enumerate(mistakes):
         existing = db.query(Mistake).filter(Mistake.question == m["question"]).first()
@@ -423,8 +815,9 @@ def create_mistakes(db: Session):
             print(f"  [SKIP] 错题已存在")
             continue
 
+        existing_count += 1
         mistake = Mistake(
-            id=f"mistake-{i+1:03d}",
+            id=f"mistake-{existing_count:03d}",
             **m,
             review_count=1,
             created_at=datetime.utcnow(),
@@ -528,7 +921,31 @@ def create_exercises(db: Session):
             "knowledge_point": "匀速直线运动",
             "difficulty": 1,
         },
+        {
+            "user_id": "user-001",
+            "subject": "化学",
+            "type": "fill_blank",
+            "question": "9g 水的物质的量是 ______ mol。（H₂O 的摩尔质量为 18g/mol）",
+            "options": None,
+            "correct_answer": "0.5",
+            "explanation": "n = m/M = 9g / 18g/mol = 0.5mol。",
+            "knowledge_point": "物质的量",
+            "difficulty": 1,
+        },
+        {
+            "user_id": "user-001",
+            "subject": "生物",
+            "type": "choice",
+            "question": "植物细胞进行光合作用的场所是？",
+            "options": '["线粒体", "叶绿体", "核糖体", "高尔基体"]',
+            "correct_answer": "1",
+            "explanation": "叶绿体是植物细胞进行光合作用的场所。",
+            "knowledge_point": "光合作用",
+            "difficulty": 1,
+        },
     ]
+
+    existing_count = db.query(Exercise).count()
 
     for i, e in enumerate(exercises):
         existing = db.query(Exercise).filter(Exercise.question == e["question"]).first()
@@ -536,8 +953,9 @@ def create_exercises(db: Session):
             print(f"  [SKIP] 练习题已存在")
             continue
 
+        existing_count += 1
         exercise = Exercise(
-            id=f"exercise-{i+1:03d}",
+            id=f"exercise-{existing_count:03d}",
             **e,
             source="manual",
             status="active",
@@ -545,6 +963,73 @@ def create_exercises(db: Session):
         )
         db.add(exercise)
         print(f"  [OK] 创建练习: {e['subject']} - {e['knowledge_point']}")
+
+    db.commit()
+
+
+def create_tasks(db: Session):
+    """创建今日任务"""
+    print("[INIT] 创建今日任务...")
+
+    tasks_data = [
+        {
+            "user_id": "user-001",
+            "title": "完成 5 道数学练习题",
+            "description": "重点练习一元二次方程和三角函数",
+            "subject": "数学",
+            "priority": "high",
+            "status": "pending",
+        },
+        {
+            "user_id": "user-001",
+            "title": "复习英语现在完成时",
+            "description": "阅读现在完成时用法详解并做相关练习",
+            "subject": "英语",
+            "priority": "medium",
+            "status": "pending",
+        },
+        {
+            "user_id": "user-001",
+            "title": "整理牛顿三大定律笔记",
+            "description": "归纳牛顿三定律内容和应用场景",
+            "subject": "物理",
+            "priority": "medium",
+            "status": "completed",
+        },
+        {
+            "user_id": "user-001",
+            "title": "背诵化学元素周期表前 20 号",
+            "description": "记忆元素名称、符号和原子序数",
+            "subject": "化学",
+            "priority": "low",
+            "status": "pending",
+        },
+        {
+            "user_id": "user-001",
+            "title": "阅读光合作用资料",
+            "description": "理解光合作用与呼吸作用的区别",
+            "subject": "生物",
+            "priority": "medium",
+            "status": "completed",
+        },
+    ]
+
+    existing_count = db.query(Task).count()
+
+    for i, t in enumerate(tasks_data):
+        existing = db.query(Task).filter(Task.title == t["title"], Task.user_id == t["user_id"]).first()
+        if existing:
+            print(f"  [SKIP] 任务已存在: {t['title']}")
+            continue
+
+        existing_count += 1
+        task = Task(
+            id=f"task-{existing_count:03d}",
+            **t,
+            created_at=datetime.utcnow(),
+        )
+        db.add(task)
+        print(f"  [OK] 创建任务: {t['title']}")
 
     db.commit()
 
@@ -1124,9 +1609,17 @@ def create_assessment_reports(db: Session):
         },
     ]
 
+    existing_count = db.query(AssessmentReport).count()
+
     for i, r in enumerate(reports):
+        existing = db.query(AssessmentReport).filter(AssessmentReport.user_id == r["user_id"]).first()
+        if existing:
+            print(f"  [SKIP] 评估报告已存在")
+            continue
+
+        existing_count += 1
         report = AssessmentReport(
-            id=f"report-{i+1:03d}",
+            id=f"report-{existing_count:03d}",
             **r,
             created_at=datetime.utcnow(),
         )
@@ -1234,6 +1727,7 @@ def main():
         create_learning_resources(db)
         create_mistakes(db)
         create_exercises(db)
+        create_tasks(db)
         create_exercise_records_and_sessions(db)
         create_study_activities(db)
         create_notifications(db)
@@ -1258,6 +1752,7 @@ def main():
         print(f"  学习资源: {db.query(LearningResource).count()}")
         print(f"  错题: {db.query(Mistake).count()}")
         print(f"  练习题: {db.query(Exercise).count()}")
+        print(f"  今日任务: {db.query(Task).count()}")
         print(f"  练习记录: {db.query(ExerciseRecord).count()}")
         print(f"  练习会话: {db.query(ExerciseSession).count()}")
         print(f"  学习活动: {db.query(StudyActivity).count()}")
