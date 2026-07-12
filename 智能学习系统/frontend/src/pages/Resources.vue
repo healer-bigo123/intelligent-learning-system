@@ -12,19 +12,10 @@
         </div>
       </div>
 
-      <div class="filter-tabs">
-        <button
-          v-for="tab in categoryTabs"
-          :key="tab.id"
-          class="filter-tab"
-          :class="{ active: activeCategory === tab.id }"
-          :style="{ '--tab-color': tab.color }"
-          @click="activeCategory = tab.id"
-        >
-          <component :is="tab.icon" class="tab-icon" />
-          <span class="tab-label">{{ tab.label }}</span>
-        </button>
-      </div>
+      <select v-model="activeCategory" class="filter-select">
+        <option value="all">全部学科</option>
+        <option v-for="tab in categoryTabs.filter(t => t.id !== 'all')" :key="tab.id" :value="tab.id">{{ tab.label }}</option>
+      </select>
 
       <div class="sort-section">
         <div class="sort-select-wrapper">
@@ -140,11 +131,16 @@ const icons = {
 }
 
 const categoryTabs = [
-  { id: 'all', label: '全部', icon: BookOpen, color: '#6366f1' },
+  { id: 'all', label: '全部学科', icon: BookOpen, color: '#6366f1' },
   { id: 'math', label: '数学', icon: Calculator, color: '#3b82f6' },
   { id: 'physics', label: '物理', icon: FlaskConical, color: '#10b981' },
   { id: 'chemistry', label: '化学', icon: FlaskConical, color: '#ef4444' },
+  { id: 'biology', label: '生物', icon: FlaskConical, color: '#06b6d4' },
   { id: 'english', label: '英语', icon: Globe, color: '#f59e0b' },
+  { id: 'chinese', label: '语文', icon: BookOpen, color: '#ec4899' },
+  { id: 'history', label: '历史', icon: BookOpen, color: '#8b5cf6' },
+  { id: 'geography', label: '地理', icon: Globe, color: '#14b8a6' },
+  { id: 'politics', label: '政治', icon: BookOpen, color: '#f97316' },
   { id: 'programming', label: '编程', icon: Code, color: '#8b5cf6' }
 ]
 
@@ -171,7 +167,12 @@ const loadResources = async () => {
       math: '数学',
       physics: '物理',
       chemistry: '化学',
+      biology: '生物',
       english: '英语',
+      chinese: '语文',
+      history: '历史',
+      geography: '地理',
+      politics: '政治',
       programming: '编程'
     }
     
@@ -323,85 +324,26 @@ onMounted(() => {
   }
 }
 
-.filter-tabs {
-  display: flex;
-  gap: 10px;
-}
-
-.filter-tab {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 0 18px;
-  min-width: 70px;
-  height: 40px;
+.filter-select {
+  padding: 8px 12px;
   background: linear-gradient(145deg, #273548, #1e293b);
   border: 2px solid #475569;
   border-radius: var(--radius-md);
+  color: #e2e8f0;
+  font-size: 13px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 
-    0 2px 6px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  height: 40px;
+  min-width: 120px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: var(--tab-color, #64748b);
-    transform: scaleY(0);
-    transition: transform 0.3s ease;
+  &:focus {
+    outline: none;
+    border-color: #6366f1;
   }
 
-  &:hover {
-    background: linear-gradient(145deg, #334155, #273548);
-    border-color: var(--tab-color, #60a5fa);
-    transform: translateY(-1px);
-    box-shadow: 
-      0 4px 12px rgba(0, 0, 0, 0.25),
-      0 0 0 1px var(--tab-color, #60a5fa);
-
-    &::before {
-      transform: scaleY(1);
-    }
-  }
-
-  &.active {
-    background: linear-gradient(145deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.1));
-    border-color: var(--tab-color, #6366f1);
-    box-shadow: 
-      0 4px 12px rgba(99, 102, 241, 0.25),
-      0 0 0 1px var(--tab-color, #6366f1);
-
-    &::before {
-      transform: scaleY(1);
-    }
-
-    .tab-icon,
-    .tab-label {
-      color: var(--tab-color, #6366f1);
-    }
-  }
-
-  .tab-icon {
-    width: 15px;
-    height: 15px;
-    color: #cbd5e1;
-    transition: color 0.3s ease;
-    flex-shrink: 0;
-  }
-
-  .tab-label {
-    font-size: 13px;
+  option {
+    background: #1e293b;
     color: #e2e8f0;
-    font-weight: 500;
-    transition: color 0.3s ease;
-    white-space: nowrap;
   }
 }
 

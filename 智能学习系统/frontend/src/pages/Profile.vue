@@ -150,6 +150,32 @@
           </div>
         </div>
 
+        <!-- 成就墙 -->
+        <div v-if="activeMenu === 'achievements'" class="content-section">
+          <div class="content-header">
+            <h2 class="content-title">我的成就</h2>
+            <button class="add-btn" @click="$router.push('/achievements')">
+              <component :is="icons.ChevronRight" class="add-icon" />
+              查看全部
+            </button>
+          </div>
+
+          <div class="achievements-grid">
+            <div v-for="achievement in myAchievements" :key="achievement.id" class="achievement-card">
+              <div class="achievement-icon" :style="{ background: achievement.color }">
+                <component :is="achievement.icon" class="icon" />
+              </div>
+              <div class="achievement-info">
+                <h3 class="achievement-title">{{ achievement.title }}</h3>
+                <p class="achievement-desc">{{ achievement.description }}</p>
+              </div>
+              <div class="achievement-status" :class="{ unlocked: achievement.unlocked }">
+                {{ achievement.unlocked ? '已解锁' : '未解锁' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 通知设置 -->
         <div v-if="activeMenu === 'notifications'" class="content-section">
           <div class="content-header">
@@ -229,13 +255,13 @@ import { ref } from 'vue'
 import {
   User, Camera, Pencil, Share2, Settings, Target, Bell,
   Shield, ChevronRight, Plus, MoreHorizontal, Lock,
-  Key, Mail, AlertCircle
+  Key, Mail, AlertCircle, Award
 } from 'lucide-vue-next'
 
 const icons = {
   User, Camera, Pencil, Share2, Settings, Target, Bell,
   Shield, ChevronRight, Plus, MoreHorizontal, Lock,
-  Key, Mail, AlertCircle
+  Key, Mail, AlertCircle, Award
 }
 
 const avatarColor = '#6366f1'
@@ -253,6 +279,7 @@ const activeMenu = ref('profile')
 const menuItems = [
   { id: 'profile', label: '个人资料', icon: User },
   { id: 'goals', label: '学习目标', icon: Target },
+  { id: 'achievements', label: '成就墙', icon: Award },
   { id: 'notifications', label: '通知设置', icon: Bell },
   { id: 'privacy', label: '隐私设置', icon: Shield },
   { id: 'security', label: '安全设置', icon: Lock }
@@ -316,6 +343,15 @@ const securityOptions = ref([
   { id: 2, title: '绑定手机号', description: '已绑定: 138****8888', icon: Key, action: '更换' },
   { id: 3, title: '绑定邮箱', description: '已绑定: learner@example.com', icon: Mail, action: '更换' },
   { id: 4, title: '登录设备管理', description: '查看并管理当前登录的设备', icon: AlertCircle, action: '管理' }
+])
+
+const myAchievements = ref([
+  { id: 1, title: '首次登录', description: '第一次成功登录学习平台', icon: Award, color: '#f59e0b', unlocked: true },
+  { id: 2, title: '连续学习7天', description: '连续7天保持学习打卡', icon: Target, color: '#10b981', unlocked: true },
+  { id: 3, title: '完成100道题', description: '累计完成100道练习题', icon: Target, color: '#3b82f6', unlocked: true },
+  { id: 4, title: '连续学习30天', description: '连续30天保持学习打卡', icon: Target, color: '#8b5cf6', unlocked: false },
+  { id: 5, title: '完成500道题', description: '累计完成500道练习题', icon: Target, color: '#ec4899', unlocked: false },
+  { id: 6, title: '全学科精通', description: '所有学科学习进度达到80%以上', icon: Award, color: '#f97316', unlocked: false }
 ])
 </script>
 
@@ -942,6 +978,74 @@ const securityOptions = ref([
     background: var(--primary-color);
     border-color: var(--primary-color);
     color: white;
+  }
+}
+
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.achievement-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--primary-color);
+  }
+
+  .achievement-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    .icon {
+      width: 22px;
+      height: 22px;
+      color: white;
+    }
+  }
+
+  .achievement-info {
+    flex: 1;
+
+    .achievement-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0 0 4px;
+    }
+
+    .achievement-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+  }
+
+  .achievement-status {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 4px 10px;
+    background: var(--bg-card);
+    border-radius: 12px;
+    flex-shrink: 0;
+
+    &.unlocked {
+      color: var(--primary-color);
+      background: rgba(99, 102, 241, 0.1);
+    }
   }
 }
 </style>

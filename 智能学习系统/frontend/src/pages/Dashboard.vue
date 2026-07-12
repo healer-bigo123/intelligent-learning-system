@@ -378,12 +378,12 @@ const loadDashboardData = async () => {
       api.get(`/learning-paths?user_id=${userId}`).catch(() => ({ data: [] }))
     ])
     
-    const materials = materialsRes.data || []
-    const resources = resourcesRes.data || []
-    const mistakes = mistakesRes.data || []
-    const exercises = exercisesRes.data || []
-    const activities = activitiesRes.data || []
-    const paths = pathsRes.data || []
+    const materials = Array.isArray(materialsRes.data) ? materialsRes.data : []
+    const resources = Array.isArray(resourcesRes.data) ? resourcesRes.data : []
+    const mistakes = Array.isArray(mistakesRes.data) ? mistakesRes.data : []
+    const exercises = Array.isArray(exercisesRes.data) ? exercisesRes.data : []
+    const activities = Array.isArray(activitiesRes.data) ? activitiesRes.data : []
+    const _paths = Array.isArray(pathsRes.data) ? pathsRes.data : []
     
     // 更新统计数据
     stats.value = {
