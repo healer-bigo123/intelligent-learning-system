@@ -1,138 +1,187 @@
 /**
- * 前端智能体页面 API 接口
- * 备注：此文件包含智能体交互中心页面使用的所有 API 接口定义
+ * 智能体 API 接口
+ * 对应后端：/api/v1/agents
  * 对应页面：src/immersive-agent.vue
  */
+import { api } from './client'
 
-import type { AgentInfo, ModelInfo, ChatMessage } from '../types'
+// ========== 请求/响应类型 ==========
 
-// 智能体列表
-export const getAgents = async (): Promise<AgentInfo[]> => {
-  const response = await fetch('/api/v1/agents/')
-  return response.json()
+export interface AgentResponse {
+  id: string
+  name: string
+  description: string
+  status: string
+  tools?: string[]
 }
 
-// 获取智能体详情
-export const getAgentById = async (agentId: string): Promise<AgentInfo> => {
-  const response = await fetch(`/api/v1/agents/${agentId}`)
-  return response.json()
+export interface AgentListResponse {
+  agents: AgentResponse[]
+  total: number
 }
 
-// 向智能体发送消息
-export const sendMessageToAgent = async (
-  agentId: string,
-  message: string,
-  sessionId?: string
-): Promise<ChatMessage> => {
-  const response = await fetch('/api/v1/agents/query', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      agent_id: agentId,
-      message,
-      session_id: sessionId
-    })
-  })
-  return response.json()
+export interface QueryRequest {
+  user_input: string
+  user_id: string
+  session_id?: string
 }
 
-// 创建会话
-export const createSession = async (agentId: string): Promise<{ session_id: string }> => {
-  const response = await fetch('/api/v1/agents/sessions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ agent_id: agentId })
-  })
-  return response.json()
-}
-
-// 获取会话详情
-export const getSession = async (sessionId: string): Promise<{
+export interface QueryResponse {
   session_id: string
-  agent_id: string
-  messages: ChatMessage[]
-}> => {
-  const response = await fetch(`/api/v1/agents/sessions/${sessionId}`)
-  return response.json()
+  intent: string
+  result: Record<string, any>
+  tasks_executed: number
+  timestamp: string
 }
 
-// 关闭会话
-export const closeSession = async (sessionId: string): Promise<void> => {
-  await fetch(`/api/v1/agents/sessions/${sessionId}`, {
-    method: 'DELETE'
-  })
+export interface SessionInfo {
+  session_id: string
+  user_id: string
+  task_count: number
+  conversation_history_count: number
+  created_at: string
+  last_active_at: string
 }
 
-// 意图识别
-export const recognizeIntent = async (query: string): Promise<{
+export interface HealthResponse {
+  status: string
+  agents_count: number
+  sessions_count: number
+  timestamp: string
+}
+
+export interface IntentResponse {
   intent_type: string
   entities: Record<string, string>
   urgency: 'low' | 'medium' | 'high'
   preferred_agent: string
   emotion_tag: string
-}> => {
-  const response = await fetch('/api/v1/agents/intent/recognize', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ query })
+  raw_input: string
+}
+
+// ========== 智能体管理 ==========
+
+/** 获取智能体列表 */
+export const getAgents = async (): Promise<AgentListResponse> => {
+  const response = await api.get('/agents/')
+  return response.data
+}
+
+/** 获取智能体详情 */
+export const getAgentById = async (agentId: string): Promise<AgentResponse> => {
+  const response = await api.get(`/agents/${agentId}`)
+  return response.data
+}
+
+// ========== 消息与会话 ==========
+
+/** 向智能体发送查询 */
+export const queryAgent = async (data: QueryRequest): Promise<QueryResponse> => {
+  const response = await api.post('/agents/query', data)
+  return response.data
+}
+
+/** 创建会话 */
+export const createSession = async (userId: string): Promise<SessionInfo> => {
+  const response = await api.post('/agents/sessions', null, {
+    params: { user_id: userId }
   })
-  return response.json()
+  return response.data
 }
 
-// 获取可用模型列表
-export const getModels = async (): Promise<ModelInfo[]> => {
-  const response = await fetch('/api/v1/agents/models')
-  return response.json()
+/** 获取会话信息 */
+export const getSession = async (sessionId: string): Promise<SessionInfo> => {
+  const response = await api.get(`/agents/sessions/${sessionId}`)
+  return response.data
 }
 
-// 设置当前模型
-export const setCurrentModel = async (modelId: string): Promise<void> => {
-  await fetch('/api/v1/agents/model/select', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ model_id: modelId })
+/** 关闭会话 */
+export const closeSession = async (sessionId: string): Promise<void> => {
+  await api.delete(`/agents/sessions/${sessionId}`)
+}
+
+/** 获取会话任务列表 */
+export const getSessionTasks = async (sessionId: string): Promise<any[]> => {
+  const response = await api.get(`/agents/sessions/${sessionId}/tasks`)
+  return response.data
+}
+
+// ========== 意图识别 ==========
+
+/** 意图识别 */
+export const recognizeIntent = async (userInput: string, sessionId?: string, userId?: string): Promise<IntentResponse> => {
+  const response = await api.post('/agents/intent/recognize', null, {
+    params: { user_input: userInput, session_id: sessionId, user_id: userId }
+  })
+  return response.data
+}
+
+// ========== 记忆管理 ==========
+
+/** 添加短期记忆 */
+export const addShortTermMemory = async (sessionId: string, content: Record<string, any>): Promise<void> => {
+  await api.post('/agents/memory/short-term', content, {
+    params: { session_id: sessionId }
   })
 }
 
-// 健康检查
-export const checkHealth = async (): Promise<{
-  status: 'healthy' | 'unhealthy'
-  agents: number
-  models: number
-}> => {
-  const response = await fetch('/api/v1/agents/health')
-  return response.json()
+/** 获取短期记忆 */
+export const getShortTermMemory = async (sessionId: string): Promise<any> => {
+  const response = await api.get(`/agents/memory/short-term/${sessionId}`)
+  return response.data
 }
 
-// 添加短期记忆
-export const addShortTermMemory = async (content: string): Promise<void> => {
-  await fetch('/api/v1/agents/memory/short-term', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ content })
+/** 添加长期记忆 */
+export const addLongTermMemory = async (userId: string, key: string, value: any): Promise<void> => {
+  await api.post('/agents/memory/long-term', null, {
+    params: { user_id: userId, key, value: typeof value === 'string' ? value : JSON.stringify(value) }
   })
 }
 
-// 添加长期记忆
-export const addLongTermMemory = async (
-  key: string,
-  value: string | Record<string, unknown>
-): Promise<void> => {
-  await fetch('/api/v1/agents/memory/long-term', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ key, value })
+/** 获取长期记忆 */
+export const getLongTermMemory = async (userId: string, key?: string): Promise<any> => {
+  const response = await api.get(`/agents/memory/long-term/${userId}`, {
+    params: { key }
   })
+  return response.data
+}
+
+// ========== 模型管理 ==========
+
+export interface ModelResponse {
+  id: string
+  name: string
+  provider: string
+  description: string
+  available: boolean
+}
+
+export interface ModelsResponse {
+  models: ModelResponse[]
+  current_model: string
+}
+
+export interface ModelSelectResponse {
+  message: string
+  current_model: string
+}
+
+/** 获取可用模型列表 */
+export const getModels = async (): Promise<ModelsResponse> => {
+  const response = await api.get('/agents/models')
+  return response.data
+}
+
+/** 设置当前模型 */
+export const selectModel = async (modelId: string): Promise<ModelSelectResponse> => {
+  const response = await api.post('/agents/model/select', { model_id: modelId })
+  return response.data
+}
+
+// ========== 健康检查 ==========
+
+/** 健康检查 */
+export const checkHealth = async (): Promise<HealthResponse> => {
+  const response = await api.get('/agents/health')
+  return response.data
 }
