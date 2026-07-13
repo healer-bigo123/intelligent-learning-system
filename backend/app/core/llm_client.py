@@ -608,6 +608,9 @@ class MockLLMClient(LLMClient):
             usage=LLMUsage(prompt_tokens=10, completion_tokens=50, total_tokens=60)
         )
 
+    def generate_with_tools(self, messages: List[Message], tools: List[Dict[str, Any]], **kwargs) -> Union[LLMResponse, ToolCall]:
+        return self.generate(messages, **kwargs)
+
 
 # ================ 全局实例 ================
 llm_client = None
