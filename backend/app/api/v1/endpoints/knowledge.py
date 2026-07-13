@@ -60,6 +60,7 @@ async def upload_document(
             detail=f"不支持的文件类型: {ext}，仅支持: {', '.join(allowed_extensions)}"
         )
     
+    tmp_path = None
     try:
         # 保存临时文件
         with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
@@ -73,9 +74,6 @@ async def upload_document(
         # 添加到知识库
         knowledge_base_manager.add_to_knowledge_base(documents, store_type)
         
-        # 清理临时文件
-        os.unlink(tmp_path)
-        
         return {
             "message": "文档上传成功",
             "filename": file.filename,
@@ -85,6 +83,13 @@ async def upload_document(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"上传失败: {str(e)}")
+    finally:
+        # 确保临时文件被清理
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except Exception:
+                pass
 
 
 @router.get("/stats")

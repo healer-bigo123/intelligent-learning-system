@@ -76,6 +76,23 @@ class KnowledgeBaseManager:
         if ext not in self.supported_extensions:
             raise ValueError(f"不支持的文件格式: {ext}，支持的格式: {list(self.supported_extensions.keys())}")
 
+        # .txt 文件直接读取，避免 LangChain TextLoader 在 Windows 中文路径下的兼容性问题
+        if ext == ".txt":
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                documents = [Document(
+                    page_content=content,
+                    metadata={
+                        "source": file_path,
+                        "file_type": ext,
+                        "file_name": os.path.basename(file_path),
+                    }
+                )]
+                return documents
+            except Exception as e:
+                raise RuntimeError(f"读取文件失败 ({file_path}): {str(e)}")
+
         loader_class = self.supported_extensions[ext]
         loader = loader_class(file_path)
         documents = loader.load()

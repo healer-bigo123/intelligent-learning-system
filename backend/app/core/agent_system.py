@@ -624,21 +624,44 @@ class IntentRecognizer:
     def recognize(self, user_input: str, context: Optional[Dict[str, Any]] = None) -> Intent:
         """识别意图"""
         input_lower = user_input.lower()
-        
-        # 规则匹配
-        if any(keyword in input_lower for keyword in ["怎么办", "不懂", "不会", "解释", "什么是", "为什么"]):
-            return self._parse_help_intent(user_input)
-        elif any(keyword in input_lower for keyword in ["计划", "安排", "学习计划", "时间表"]):
-            return self._parse_plan_intent(user_input)
-        elif any(keyword in input_lower for keyword in ["批改", "评分", "答案", "对吗"]):
-            return self._parse_grading_intent(user_input)
-        elif any(keyword in input_lower for keyword in ["推荐", "资源", "资料", "练习题"]):
-            return self._parse_recommend_intent(user_input)
-        elif any(keyword in input_lower for keyword in ["分析", "报告", "成绩", "表现"]):
-            return self._parse_analysis_intent(user_input)
-        elif any(keyword in input_lower for keyword in ["加油", "鼓励", "支持", "好累"]):
+
+        # 陪伴/情感类优先匹配（情绪问题需要优先处理）
+        if any(keyword in input_lower for keyword in [
+            "考砸", "难过", "压力", "焦虑", "崩溃", "不想学", "放弃",
+            "好难", "心烦", "担心", "害怕", "好累", "心累", "烦躁",
+            "丧", "迷茫", "没信心", "学不动", "加油", "鼓励", "支持",
+            "抑郁", "绝望", "受不了", "学不进去"
+        ]):
             return self._parse_companion_intent(user_input)
-        
+
+        # 规则匹配
+        if any(keyword in input_lower for keyword in [
+            "怎么办", "不懂", "不会", "解释", "什么是", "为什么",
+            "怎么做", "求解", "怎么算", "如何", "解答", "讲解", "教我",
+            "这道题", "公式", "定理", "概念", "什么意思", "讲一下",
+            "帮我看看", "帮我看", "帮我解答", "题目"
+        ]):
+            return self._parse_help_intent(user_input)
+        elif any(keyword in input_lower for keyword in [
+            "计划", "安排", "学习计划", "时间表", "复习", "备考",
+            "预习", "规划", "怎么学", "怎么复习", "日程"
+        ]):
+            return self._parse_plan_intent(user_input)
+        elif any(keyword in input_lower for keyword in [
+            "批改", "评分", "答案", "对吗", "改一下", "帮我改",
+            "批一下", "打分", "评价"
+        ]):
+            return self._parse_grading_intent(user_input)
+        elif any(keyword in input_lower for keyword in [
+            "推荐", "资源", "资料", "练习题", "适合", "有没有", "找一下"
+        ]):
+            return self._parse_recommend_intent(user_input)
+        elif any(keyword in input_lower for keyword in [
+            "分析", "报告", "成绩", "表现", "下降", "进步", "退步",
+            "学习情况", "学情", "统计"
+        ]):
+            return self._parse_analysis_intent(user_input)
+
         return Intent(
             intent_type=IntentType.UNKNOWN,
             entities={},
