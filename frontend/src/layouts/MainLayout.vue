@@ -51,15 +51,15 @@
             <component :is="icons.Search" class="search-icon" />
             <input type="text" placeholder="搜索..." class="search-input" />
           </div>
-          <button class="notification-btn">
+          <router-link to="/notifications" class="notification-btn">
             <component :is="icons.Bell" class="bell-icon" />
-            <span class="notification-badge">3</span>
-          </button>
+            <span class="notification-badge" v-if="unreadCount > 0">{{ unreadCount }}</span>
+          </router-link>
           <div class="user-menu">
             <div class="user-avatar">
               <component :is="icons.User" class="avatar-icon" />
             </div>
-            <span class="user-name" v-if="!collapsedSidebar">用户昵称</span>
+            <span class="user-name" v-if="!collapsedSidebar">{{ userName }}</span>
           </div>
         </div>
       </header>
@@ -77,15 +77,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { api } from '@/api/client'
 import {
   Bot, LayoutDashboard, BookOpen, BarChart, User,
-  MessageCircle, ChevronLeft, ChevronRight, Search, Bell
+  MessageCircle, ChevronLeft, ChevronRight, Search, Bell,
+  AlertCircle, Zap, Map, GraduationCap, Network,
+  Award, BellRing, Timer
 } from 'lucide-vue-next'
+
+const route = useRoute()
+
+const unreadCount = ref(0)
+const userName = ref('用户昵称')
+
+onMounted(async () => {
+  // 加载用户名
+  try {
+    const profileRes = await api.get('/auth/profile')
+    userName.value = profileRes.data?.name || profileRes.data?.username || '用户昵称'
+  } catch {
+    // 使用默认值
+  }
+
+  // 加载未读通知数
+  try {
+    const notifRes = await api.get('/notifications')
+    const items = notifRes.data?.items || []
+    unreadCount.value = items.filter((n: any) => !n.is_read).length
+  } catch {
+    // 使用默认值
+  }
+})
 
 const icons = {
   Bot, LayoutDashboard, BookOpen, BarChart, User,
-  MessageCircle, ChevronLeft, ChevronRight, Search, Bell
+  MessageCircle, ChevronLeft, ChevronRight, Search, Bell,
+  AlertCircle, Zap, Map, GraduationCap, Network,
+  Award, BellRing, Timer
 }
 
 const collapsedSidebar = ref(false)
@@ -94,6 +124,13 @@ const menuItems = [
   { path: '/', label: '首页', icon: LayoutDashboard },
   { path: '/resources', label: '学习资源', icon: BookOpen },
   { path: '/records', label: '学习记录', icon: BarChart },
+  { path: '/mistakes', label: '错题本', icon: AlertCircle },
+  { path: '/exercises', label: '练习测试', icon: Zap },
+  { path: '/learning-path', label: '学习路径', icon: Map },
+  { path: '/classroom', label: '课堂互动', icon: GraduationCap },
+  { path: '/mindmap', label: '思维导图', icon: Network },
+  { path: '/achievements', label: '成就系统', icon: Award },
+  { path: '/focus', label: '专注学习', icon: Timer },
   { path: '/agent', label: '智能助手', icon: MessageCircle },
   { path: '/profile', label: '个人中心', icon: User }
 ]
@@ -102,12 +139,20 @@ const pageTitles: Record<string, { title: string; desc: string }> = {
   '/': { title: '学习仪表盘', desc: '查看您的学习进度和推荐内容' },
   '/resources': { title: '学习资源', desc: '发现优质的学习内容' },
   '/records': { title: '学习记录', desc: '追踪您的学习历程' },
-  '/profile': { title: '个人中心', desc: '管理您的账户和设置' },
-  '/agent': { title: '智能助手', desc: '与AI助手互动学习' }
+  '/mistakes': { title: '错题本', desc: '复习和巩固薄弱知识点' },
+  '/exercises': { title: '练习测试', desc: '通过练习提升学习效果' },
+  '/learning-path': { title: '学习路径', desc: '规划您的学习路线' },
+  '/classroom': { title: '课堂互动', desc: '参与课堂互动和测验' },
+  '/mindmap': { title: '思维导图', desc: '可视化知识结构' },
+  '/achievements': { title: '成就系统', desc: '查看您的学习成就' },
+  '/focus': { title: '专注学习', desc: '番茄钟专注计时' },
+  '/notifications': { title: '通知中心', desc: '查看您的消息通知' },
+  '/agent': { title: '智能助手', desc: '与AI助手互动学习' },
+  '/profile': { title: '个人中心', desc: '管理您的账户和设置' }
 }
 
-const currentPageTitle = computed(() => pageTitles[window.location.pathname]?.title || '学习仪表盘')
-const currentPageDesc = computed(() => pageTitles[window.location.pathname]?.desc || '')
+const currentPageTitle = computed(() => pageTitles[route.path]?.title || '学习仪表盘')
+const currentPageDesc = computed(() => pageTitles[route.path]?.desc || '')
 </script>
 
 <style lang="scss" scoped>
