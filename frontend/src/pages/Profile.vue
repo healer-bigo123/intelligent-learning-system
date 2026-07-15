@@ -73,7 +73,7 @@
             <h2 class="content-title">个人资料</h2>
           </div>
 
-          <form class="profile-form">
+          <form class="profile-form" @submit.prevent="handleSave">
             <div class="form-row">
               <div class="form-group">
                 <label>用户名</label>
@@ -251,12 +251,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import {
   User, Camera, Pencil, Share2, Settings, Target, Bell,
   Shield, ChevronRight, Plus, MoreHorizontal, Lock,
   Key, Mail, AlertCircle, Award
 } from 'lucide-vue-next'
+import { getProfile, updateProfile, type UserInfo } from '@/api/auth'
 
 const icons = {
   User, Camera, Pencil, Share2, Settings, Target, Bell,
@@ -265,13 +266,15 @@ const icons = {
 }
 
 const avatarColor = '#6366f1'
+const loading = ref(false)
+const saving = ref(false)
 
 const user = ref({
-  name: '学习者小明',
-  title: '勤奋的学习者',
-  courses: 12,
-  hours: 156,
-  streak: 15
+  name: '',
+  title: '',
+  courses: 0,
+  hours: 0,
+  streak: 0
 })
 
 const activeMenu = ref('profile')
@@ -286,11 +289,53 @@ const menuItems = [
 ]
 
 const formData = ref({
-  username: 'learner_xm',
-  nickname: '学习者小明',
-  email: 'learner@example.com',
-  phone: '138****8888',
-  bio: '热爱学习，每天进步一点点！'
+  username: '',
+  nickname: '',
+  email: '',
+  phone: '',
+  bio: ''
+})
+
+async function loadProfile() {
+  try {
+    loading.value = true
+    const res = await getProfile()
+    const info: UserInfo = res.data
+    user.value.name = info.nickname || info.username
+    user.value.title = info.role === 'teacher' ? '教师' : '学生'
+    formData.value = {
+      username: info.username,
+      nickname: info.nickname || '',
+      email: info.email || '',
+      phone: info.phone || '',
+      bio: ''
+    }
+  } catch (e) {
+    console.error('获取用户信息失败', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleSave() {
+  try {
+    saving.value = true
+    await updateProfile({
+      nickname: formData.value.nickname,
+      email: formData.value.email,
+      phone: formData.value.phone,
+    })
+    user.value.name = formData.value.nickname || formData.value.username
+    alert('保存成功')
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '保存失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+onMounted(() => {
+  loadProfile()
 })
 
 const goals = ref([

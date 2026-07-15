@@ -38,6 +38,46 @@ const routes: RouteRecordRaw[] = [
         path: 'agent',
         name: 'Agent',
         component: () => import('@/immersive-agent.vue')
+      },
+      {
+        path: 'mistakes',
+        name: 'Mistakes',
+        component: () => import('@/pages/Mistakes.vue')
+      },
+      {
+        path: 'exercises',
+        name: 'Exercises',
+        component: () => import('@/pages/Exercises.vue')
+      },
+      {
+        path: 'learning-path',
+        name: 'LearningPath',
+        component: () => import('@/pages/LearningPath.vue')
+      },
+      {
+        path: 'classroom',
+        name: 'Classroom',
+        component: () => import('@/pages/Classroom.vue')
+      },
+      {
+        path: 'mindmap',
+        name: 'MindMap',
+        component: () => import('@/pages/MindMap.vue')
+      },
+      {
+        path: 'achievements',
+        name: 'Achievements',
+        component: () => import('@/pages/Achievements.vue')
+      },
+      {
+        path: 'notifications',
+        name: 'Notifications',
+        component: () => import('@/pages/Notifications.vue')
+      },
+      {
+        path: 'focus',
+        name: 'Focus',
+        component: () => import('@/pages/Focus.vue')
       }
     ]
   }
