@@ -642,10 +642,11 @@ watch(selectedRange, () => {
 }
 
 .chart-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(145deg, rgba(40, 54, 71, 0.95), rgba(26, 37, 52, 0.98));
+  border: 2px solid rgba(71, 85, 105, 0.7);
   border-radius: var(--radius-lg);
   padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .chart-header {

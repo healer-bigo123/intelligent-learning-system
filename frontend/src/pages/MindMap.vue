@@ -992,13 +992,14 @@ function getDifficultyText(difficulty?: string): string {
 // 左侧课程列表
 .course-sidebar {
   width: 380px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(145deg, rgba(40, 54, 71, 0.95), rgba(26, 37, 52, 0.98));
+  border: 2px solid rgba(71, 85, 105, 0.7);
   border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .sidebar-header {
@@ -1022,34 +1023,46 @@ function getDifficultyText(difficulty?: string): string {
 }
 
 .subject-filter {
-  padding: 12px 16px;
+  padding: 16px;
   border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(145deg, rgba(40, 54, 71, 0.5), rgba(26, 37, 52, 0.5));
 
   label {
-    font-size: 11px;
-    color: var(--text-muted);
+    font-size: 12px;
+    color: #94a3b8;
     font-weight: 500;
     display: block;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
 
   select {
     width: 100%;
-    padding: 8px 12px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
+    padding: 10px 14px;
+    background: linear-gradient(145deg, #273548, #1e293b);
+    border: 2px solid rgba(71, 85, 105, 0.8);
     border-radius: var(--radius-md);
-    color: var(--text-primary);
+    color: #e2e8f0;
     font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
+    height: 44px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
 
     &:focus {
       outline: none;
-      border-color: var(--primary-color);
+      border-color: #6366f1;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), 0 0 0 1px #6366f1;
+    }
+
+    &:hover {
+      border-color: #60a5fa;
     }
 
     option {
-      background: var(--bg-secondary);
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 10px 14px;
     }
   }
 }

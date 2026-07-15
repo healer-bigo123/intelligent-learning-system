@@ -593,6 +593,7 @@ onMounted(() => {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+  margin-bottom: 20px;
 }
 
 .filter-left {
@@ -603,20 +604,24 @@ onMounted(() => {
 
 .filter-select {
   padding: 8px 12px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
+  background: linear-gradient(145deg, #273548, #1e293b);
+  border: 2px solid rgba(71, 85, 105, 0.8);
+  border-radius: var(--radius-md);
+  color: #e2e8f0;
   font-size: 13px;
   cursor: pointer;
+  height: 40px;
+  min-width: 120px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   &:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: #6366f1;
   }
 
   option {
-    background: var(--bg-secondary);
+    background: #1e293b;
+    color: #e2e8f0;
   }
 }
 
@@ -625,21 +630,31 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  background: linear-gradient(145deg, #273548, #1e293b);
+  border: 2px solid rgba(71, 85, 105, 0.8);
+  border-radius: var(--radius-md);
+  height: 40px;
+  min-width: 180px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
 
-  .search-icon { width: 14px; height: 14px; color: var(--text-muted); }
+  &:hover,
+  &:focus-within {
+    border-color: #60a5fa;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), 0 0 0 1px #60a5fa;
+  }
+
+  .search-icon { width: 15px; height: 15px; color: #94a3b8; }
 
   .search-input {
     background: transparent;
     border: none;
     outline: none;
-    color: var(--text-primary);
+    color: #e2e8f0;
     font-size: 13px;
     width: 160px;
 
-    &::placeholder { color: var(--text-muted); }
+    &::placeholder { color: #64748b; }
   }
 }
 
@@ -712,14 +727,15 @@ onMounted(() => {
 }
 
 .mistake-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(145deg, rgba(40, 54, 71, 0.95), rgba(26, 37, 52, 0.98));
+  border: 2px solid rgba(71, 85, 105, 0.7);
   border-radius: var(--radius-lg);
   padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   &:hover {
     border-color: rgba(99, 102, 241, 0.4);

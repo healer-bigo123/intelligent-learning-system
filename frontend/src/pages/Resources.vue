@@ -391,11 +391,8 @@ onMounted(() => {
 .filter-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0;
-  background: transparent;
-  border: none;
-  box-shadow: none;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .search-section {
@@ -526,16 +523,17 @@ onMounted(() => {
 }
 
 .course-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(145deg, rgba(40, 54, 71, 0.95), rgba(26, 37, 52, 0.98));
+  border: 2px solid rgba(71, 85, 105, 0.7);
   border-radius: var(--radius-lg);
   overflow: hidden;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
-    border-color: var(--primary-color);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    border-color: rgba(99, 102, 241, 0.5);
   }
 }
 

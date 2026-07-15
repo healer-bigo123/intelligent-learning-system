@@ -530,15 +530,25 @@ onMounted(() => {
 
 .filter-select {
   padding: 8px 12px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
+  background: linear-gradient(145deg, #273548, #1e293b);
+  border: 2px solid rgba(71, 85, 105, 0.8);
+  border-radius: var(--radius-md);
+  color: #e2e8f0;
   font-size: 13px;
   cursor: pointer;
+  height: 40px;
+  min-width: 120px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
-  &:focus { outline: none; border-color: var(--primary-color); }
-  option { background: var(--bg-secondary); }
+  &:focus {
+    outline: none;
+    border-color: #6366f1;
+  }
+
+  option {
+    background: #1e293b;
+    color: #e2e8f0;
+  }
 }
 
 .btn-primary {
@@ -602,18 +612,20 @@ onMounted(() => {
 }
 
 .exercise-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(145deg, rgba(40, 54, 71, 0.95), rgba(26, 37, 52, 0.98));
+  border: 2px solid rgba(71, 85, 105, 0.7);
   border-radius: var(--radius-lg);
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   &:hover {
-    border-color: rgba(99, 102, 241, 0.4);
+    border-color: rgba(99, 102, 241, 0.5);
     transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
   }
 }
 

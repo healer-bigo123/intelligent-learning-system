@@ -393,19 +393,20 @@ const filteredAchievements = computed(() => {
   display: flex;
   flex-direction: column;
   padding: 22px 20px;
-  background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-  border: 1px solid rgba(71, 85, 105, 0.4);
-  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, rgba(40, 54, 71, 0.95), rgba(26, 37, 52, 0.98));
+  border: 2px solid rgba(71, 85, 105, 0.7);
+  border-radius: var(--radius-lg);
   transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   &.unlocked {
-    border-color: rgba(245, 158, 11, 0.3);
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.06);
+    border-color: rgba(245, 158, 11, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 20px rgba(245, 158, 11, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
     &:hover {
       transform: translateY(-3px);
-      box-shadow: 0 0 30px rgba(245, 158, 11, 0.12), 0 8px 20px rgba(0, 0, 0, 0.2);
-      border-color: rgba(245, 158, 11, 0.5);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 30px rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.6);
     }
   }
 

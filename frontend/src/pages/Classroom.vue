@@ -355,15 +355,16 @@ const reserveClass = (classId: number) => {
 }
 
 .live-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, rgba(40, 54, 71, 0.95), rgba(26, 37, 52, 0.98));
+  border: 2px solid rgba(71, 85, 105, 0.7);
+  border-radius: var(--radius-lg);
   padding: 20px;
   transition: all var(--transition-normal);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   &:hover {
-    background: var(--bg-tertiary);
-    border-color: var(--primary-color);
+    background: linear-gradient(145deg, rgba(40, 54, 71, 0.98), rgba(26, 37, 52, 0.99));
+    border-color: rgba(99, 102, 241, 0.5);
     transform: translateY(-4px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   }

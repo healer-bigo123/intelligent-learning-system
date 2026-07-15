@@ -544,11 +544,8 @@ function getDifficultyText(difficulty: string): string {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
   flex-shrink: 0;
+  margin-bottom: 20px;
 }
 
 .filter-left {
@@ -567,20 +564,24 @@ function getDifficultyText(difficulty: string): string {
 
 .filter-select {
   padding: 8px 12px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
+  background: linear-gradient(145deg, #273548, #1e293b);
+  border: 2px solid rgba(71, 85, 105, 0.8);
+  border-radius: var(--radius-md);
+  color: #e2e8f0;
   font-size: 13px;
   cursor: pointer;
+  height: 40px;
+  min-width: 120px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   &:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: #6366f1;
   }
 
   option {
-    background: var(--bg-secondary);
+    background: #1e293b;
+    color: #e2e8f0;
   }
 }
 
@@ -588,26 +589,34 @@ function getDifficultyText(difficulty: string): string {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  padding: 0 10px;
-  height: 36px;
+  background: linear-gradient(145deg, #273548, #1e293b);
+  border: 2px solid rgba(71, 85, 105, 0.8);
+  border-radius: var(--radius-md);
+  padding: 0 12px;
+  height: 40px;
+  min-width: 120px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
 
-  &:hover { border-color: var(--primary-color); }
+  &:hover,
+  &:focus-within {
+    border-color: #60a5fa;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), 0 0 0 1px #60a5fa;
+  }
 
-  .select-icon { width: 14px; height: 14px; color: var(--text-muted); }
+  .select-icon { width: 15px; height: 15px; color: #94a3b8; }
 
   .grade-select {
     background: transparent;
     border: none;
-    color: var(--text-secondary);
+    color: #e2e8f0;
     font-size: 13px;
+    font-weight: 500;
     outline: none;
     cursor: pointer;
     min-width: 80px;
 
-    option { background: var(--bg-secondary); color: var(--text-primary); }
+    option { background: #1e293b; color: #e2e8f0; }
   }
 }
 
@@ -615,23 +624,32 @@ function getDifficultyText(difficulty: string): string {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(145deg, #273548, #1e293b);
+  border: 2px solid rgba(71, 85, 105, 0.8);
   border-radius: var(--radius-md);
-  padding: 7px 12px;
-  min-width: 180px;
+  padding: 8px 12px;
+  min-width: 200px;
+  height: 40px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
 
-  .search-icon { width: 14px; height: 14px; color: var(--text-muted); flex-shrink: 0; }
+  &:hover,
+  &:focus-within {
+    border-color: #60a5fa;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), 0 0 0 1px #60a5fa;
+  }
+
+  .search-icon { width: 15px; height: 15px; color: #94a3b8; flex-shrink: 0; }
 
   .search-input {
     flex: 1;
     background: transparent;
     border: none;
     outline: none;
-    color: var(--text-primary);
+    color: #e2e8f0;
     font-size: 13px;
     min-width: 0;
-    &::placeholder { color: var(--text-muted); }
+    &::placeholder { color: #64748b; }
   }
 
   .clear-btn {
@@ -640,8 +658,8 @@ function getDifficultyText(difficulty: string): string {
     cursor: pointer;
     padding: 2px;
     display: flex;
-    color: var(--text-muted);
-    &:hover { color: var(--text-primary); }
+    color: #94a3b8;
+    &:hover { color: #e2e8f0; }
     .clear-icon { width: 12px; height: 12px; }
   }
 }
