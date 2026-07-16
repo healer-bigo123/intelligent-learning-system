@@ -247,13 +247,15 @@ import { ref, computed } from 'vue'
 import {
   Search, X, BookOpen, Clock, Lock, Unlock,
   Calculator, FlaskConical, Code, Globe, GraduationCap,
-  FolderOpen, Target, ChevronLeft
+  FolderOpen, Target, ChevronLeft,
+  Lightbulb, Cpu, Shield, Aperture
 } from 'lucide-vue-next'
 
 const icons = {
   Search, X, BookOpen, Clock, Lock, Unlock,
   Calculator, FlaskConical, Code, Globe, GraduationCap,
-  FolderOpen, Target, ChevronLeft
+  FolderOpen, Target, ChevronLeft,
+  Lightbulb, Cpu, Shield, Aperture
 }
 
 // ===== 状态 =====
@@ -264,18 +266,15 @@ const searchQuery = ref('')
 const selectedNode = ref<any>(null)
 const searchResults = ref<any[]>([])
 
-// 全部学科列表（固定10个学科）
+// 全部章节列表（人工智能导论）
 const allSubjectList = [
-  { id: 'math', name: '数学' },
-  { id: 'physics', name: '物理' },
-  { id: 'chemistry', name: '化学' },
-  { id: 'biology', name: '生物' },
-  { id: 'english', name: '英语' },
-  { id: 'chinese', name: '语文' },
-  { id: 'history', name: '历史' },
-  { id: 'geography', name: '地理' },
-  { id: 'politics', name: '政治' },
-  { id: 'programming', name: '编程' }
+  { id: 'overview', name: '人工智能概述' },
+  { id: 'search', name: '搜索与推理' },
+  { id: 'ml', name: '机器学习' },
+  { id: 'dl', name: '深度学习' },
+  { id: 'nlp', name: '自然语言处理' },
+  { id: 'cv', name: '计算机视觉' },
+  { id: 'ethics', name: '人工智能伦理' }
 ]
 
 function onSubjectChange(val: string) {
@@ -313,17 +312,7 @@ interface SubjectInfo {
   mapHeight: number
 }
 
-const courseOptions = [
-  { id: 'math-1', name: '高中数学', subject: 'math', grade: 'grade10' },
-  { id: 'math-2', name: '高中数学（下）', subject: 'math', grade: 'grade11' },
-  { id: 'physics-1', name: '高中物理', subject: 'physics', grade: 'grade10' },
-  { id: 'physics-2', name: '高中物理（电磁）', subject: 'physics', grade: 'grade11' },
-  { id: 'prog-1', name: 'Python编程', subject: 'programming', grade: 'grade10' },
-  { id: 'eng-1', name: '高中英语', subject: 'english', grade: 'grade10' },
-  { id: 'eng-2', name: '英语进阶', subject: 'english', grade: 'grade11' }
-]
-
-// 生成蜿蜒路径坐标（百分比）
+// 生成蜿蜒路径坐标（使用百分比坐标）
 function generateSnakePath(count: number): { x: number; y: number }[] {
   const positions: { x: number; y: number }[] = []
   const cols = 5
@@ -350,34 +339,44 @@ function generateSnakePath(count: number): { x: number; y: number }[] {
 }
 
 const allNodes: Omit<PathNode, 'x' | 'y'>[] = [
-  // 数学
-  { id: 'm1', title: '函数概念', description: '理解函数的定义、定义域、值域', icon: Calculator, status: 'unlocked', subject: 'math', grade: 'grade10', courseId: 'math-1', courseName: '高中数学', chapter: '第一章 函数', duration: '45分钟', difficulty: 'easy' },
-  { id: 'm2', title: '函数单调性', description: '掌握函数单调性的判断方法', icon: Calculator, status: 'unlocked', subject: 'math', grade: 'grade10', courseId: 'math-1', courseName: '高中数学', chapter: '第一章 函数', duration: '60分钟', difficulty: 'medium' },
-  { id: 'm3', title: '函数奇偶性', description: '理解奇函数和偶函数的性质', icon: Calculator, status: 'unlocked', subject: 'math', grade: 'grade10', courseId: 'math-1', courseName: '高中数学', chapter: '第一章 函数', duration: '60分钟', difficulty: 'medium' },
-  { id: 'm4', title: '指数函数', description: '指数函数的图像与性质', icon: Calculator, status: 'unlocked', subject: 'math', grade: 'grade10', courseId: 'math-1', courseName: '高中数学', chapter: '第一章 函数', duration: '90分钟', difficulty: 'medium' },
-  { id: 'm5', title: '对数函数', description: '对数运算与对数函数', icon: Calculator, status: 'unlocked', subject: 'math', grade: 'grade10', courseId: 'math-1', courseName: '高中数学', chapter: '第二章 基本初等函数', duration: '90分钟', difficulty: 'hard' },
-  { id: 'm6', title: '幂函数', description: '幂函数的图像与性质', icon: Calculator, status: 'locked', subject: 'math', grade: 'grade10', courseId: 'math-1', courseName: '高中数学', chapter: '第二章 基本初等函数', duration: '60分钟', difficulty: 'medium' },
-  { id: 'm7', title: '函数应用', description: '函数模型及其应用', icon: Calculator, status: 'locked', subject: 'math', grade: 'grade10', courseId: 'math-1', courseName: '高中数学', chapter: '第二章 基本初等函数', duration: '120分钟', difficulty: 'hard' },
-  { id: 'm8', title: '三角函数', description: '三角函数的定义与图像', icon: Calculator, status: 'locked', subject: 'math', grade: 'grade10', courseId: 'math-1', courseName: '高中数学', chapter: '第三章 三角函数', duration: '90分钟', difficulty: 'hard' },
-  // 物理
-  { id: 'p1', title: '质点参考系', description: '质点模型与参考系选择', icon: FlaskConical, status: 'unlocked', subject: 'physics', grade: 'grade10', courseId: 'physics-1', courseName: '高中物理', chapter: '第一章 运动描述', duration: '30分钟', difficulty: 'easy' },
-  { id: 'p2', title: '位移与速度', description: '位移、速度的概念与计算', icon: FlaskConical, status: 'unlocked', subject: 'physics', grade: 'grade10', courseId: 'physics-1', courseName: '高中物理', chapter: '第一章 运动描述', duration: '60分钟', difficulty: 'medium' },
-  { id: 'p3', title: '加速度', description: '加速度的定义与计算', icon: FlaskConical, status: 'unlocked', subject: 'physics', grade: 'grade10', courseId: 'physics-1', courseName: '高中物理', chapter: '第一章 运动描述', duration: '60分钟', difficulty: 'medium' },
-  { id: 'p4', title: '匀变速运动', description: '匀变速直线运动规律', icon: FlaskConical, status: 'locked', subject: 'physics', grade: 'grade10', courseId: 'physics-1', courseName: '高中物理', chapter: '第二章 匀变速运动', duration: '90分钟', difficulty: 'hard' },
-  { id: 'p5', title: '自由落体', description: '自由落体运动规律', icon: FlaskConical, status: 'locked', subject: 'physics', grade: 'grade10', courseId: 'physics-1', courseName: '高中物理', chapter: '第二章 匀变速运动', duration: '60分钟', difficulty: 'medium' },
-  { id: 'p6', title: '力的合成', description: '力的合成与分解', icon: FlaskConical, status: 'locked', subject: 'physics', grade: 'grade10', courseId: 'physics-1', courseName: '高中物理', chapter: '第三章 相互作用', duration: '90分钟', difficulty: 'hard' },
-  // 编程
-  { id: 'c1', title: '变量与类型', description: 'Python变量与数据类型', icon: Code, status: 'unlocked', subject: 'programming', grade: 'grade10', courseId: 'prog-1', courseName: 'Python编程', chapter: '第一章 Python基础', duration: '45分钟', difficulty: 'easy' },
-  { id: 'c2', title: '条件语句', description: 'if-else条件判断', icon: Code, status: 'unlocked', subject: 'programming', grade: 'grade10', courseId: 'prog-1', courseName: 'Python编程', chapter: '第一章 Python基础', duration: '60分钟', difficulty: 'easy' },
-  { id: 'c3', title: '循环结构', description: 'for和while循环', icon: Code, status: 'unlocked', subject: 'programming', grade: 'grade10', courseId: 'prog-1', courseName: 'Python编程', chapter: '第一章 Python基础', duration: '90分钟', difficulty: 'medium' },
-  { id: 'c4', title: '函数定义', description: '函数的定义与调用', icon: Code, status: 'unlocked', subject: 'programming', grade: 'grade10', courseId: 'prog-1', courseName: 'Python编程', chapter: '第二章 函数', duration: '90分钟', difficulty: 'medium' },
-  { id: 'c5', title: '模块与包', description: '模块导入与包管理', icon: Code, status: 'locked', subject: 'programming', grade: 'grade10', courseId: 'prog-1', courseName: 'Python编程', chapter: '第二章 函数', duration: '60分钟', difficulty: 'hard' },
-  { id: 'c6', title: '面向对象', description: '类与对象的概念', icon: Code, status: 'locked', subject: 'programming', grade: 'grade10', courseId: 'prog-1', courseName: 'Python编程', chapter: '第三章 面向对象', duration: '120分钟', difficulty: 'hard' },
-  // 英语
-  { id: 'e1', title: '时态语态', description: '英语时态与被动语态', icon: Globe, status: 'unlocked', subject: 'english', grade: 'grade10', courseId: 'eng-1', courseName: '高中英语', chapter: '第一章 语法基础', duration: '90分钟', difficulty: 'medium' },
-  { id: 'e2', title: '从句', description: '定语从句与名词性从句', icon: Globe, status: 'unlocked', subject: 'english', grade: 'grade10', courseId: 'eng-1', courseName: '高中英语', chapter: '第一章 语法基础', duration: '120分钟', difficulty: 'hard' },
-  { id: 'e3', title: '非谓语动词', description: '不定式、动名词、分词', icon: Globe, status: 'locked', subject: 'english', grade: 'grade10', courseId: 'eng-1', courseName: '高中英语', chapter: '第一章 语法基础', duration: '90分钟', difficulty: 'hard' },
-  { id: 'e4', title: '虚拟语气', description: '虚拟语气的用法', icon: Globe, status: 'locked', subject: 'english', grade: 'grade10', courseId: 'eng-1', courseName: '高中英语', chapter: '第二章 高级语法', duration: '90分钟', difficulty: 'hard' },
+  // 人工智能概述
+  { id: 'ai-o1', title: '人工智能定义', description: '理解人工智能的基本概念与核心目标', icon: BookOpen, status: 'unlocked', subject: 'overview', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第一章 人工智能概述', duration: '45分钟', difficulty: 'easy' },
+  { id: 'ai-o2', title: '发展历程', description: '从图灵测试到现代AI的发展脉络', icon: BookOpen, status: 'unlocked', subject: 'overview', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第一章 人工智能概述', duration: '60分钟', difficulty: 'medium' },
+  { id: 'ai-o3', title: '主要流派', description: '符号主义、连接主义与行为主义', icon: BookOpen, status: 'unlocked', subject: 'overview', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第一章 人工智能概述', duration: '60分钟', difficulty: 'medium' },
+  { id: 'ai-o4', title: '应用领域', description: 'AI在医疗、金融、交通等领域的典型应用', icon: BookOpen, status: 'unlocked', subject: 'overview', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第一章 人工智能概述', duration: '90分钟', difficulty: 'easy' },
+  { id: 'ai-o5', title: '智能体模型', description: '感知、决策与行动的智能体框架', icon: Lightbulb, status: 'locked', subject: 'overview', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第一章 人工智能概述', duration: '90分钟', difficulty: 'medium' },
+  // 搜索与推理
+  { id: 'ai-s1', title: '问题求解', description: '状态空间、搜索树与问题归约', icon: Search, status: 'unlocked', subject: 'search', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第二章 搜索与推理', duration: '60分钟', difficulty: 'medium' },
+  { id: 'ai-s2', title: '盲目搜索', description: '深度优先、广度优先与一致代价搜索', icon: Search, status: 'unlocked', subject: 'search', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第二章 搜索与推理', duration: '90分钟', difficulty: 'medium' },
+  { id: 'ai-s3', title: '启发式搜索', description: 'A*算法与启发函数设计', icon: Search, status: 'unlocked', subject: 'search', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第二章 搜索与推理', duration: '120分钟', difficulty: 'hard' },
+  { id: 'ai-s4', title: '知识表示', description: '谓词逻辑、语义网络与知识图谱', icon: Search, status: 'locked', subject: 'search', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第二章 搜索与推理', duration: '90分钟', difficulty: 'hard' },
+  { id: 'ai-s5', title: '推理方法', description: '演绎推理、归纳推理与不确定性推理', icon: Search, status: 'locked', subject: 'search', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第二章 搜索与推理', duration: '120分钟', difficulty: 'hard' },
+  // 机器学习
+  { id: 'ai-ml1', title: '机器学习概述', description: '学习范式、数据集与模型评估', icon: Code, status: 'unlocked', subject: 'ml', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第三章 机器学习', duration: '60分钟', difficulty: 'easy' },
+  { id: 'ai-ml2', title: '监督学习', description: '分类与回归：KNN、决策树与线性回归', icon: Code, status: 'unlocked', subject: 'ml', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第三章 机器学习', duration: '120分钟', difficulty: 'medium' },
+  { id: 'ai-ml3', title: '无监督学习', description: '聚类与降维：K-Means与PCA', icon: Code, status: 'unlocked', subject: 'ml', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第三章 机器学习', duration: '90分钟', difficulty: 'medium' },
+  { id: 'ai-ml4', title: '强化学习', description: '智能体、奖励与策略梯度基础', icon: Code, status: 'locked', subject: 'ml', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第三章 机器学习', duration: '120分钟', difficulty: 'hard' },
+  { id: 'ai-ml5', title: '模型评估', description: '交叉验证、过拟合与正则化', icon: Code, status: 'locked', subject: 'ml', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第三章 机器学习', duration: '90分钟', difficulty: 'medium' },
+  // 深度学习
+  { id: 'ai-dl1', title: '神经网络基础', description: '感知机、多层网络与反向传播', icon: Cpu, status: 'unlocked', subject: 'dl', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第四章 深度学习', duration: '120分钟', difficulty: 'medium' },
+  { id: 'ai-dl2', title: '卷积神经网络', description: '卷积、池化与CNN典型结构', icon: Cpu, status: 'unlocked', subject: 'dl', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第四章 深度学习', duration: '120分钟', difficulty: 'hard' },
+  { id: 'ai-dl3', title: '循环神经网络', description: 'RNN、LSTM与序列建模', icon: Cpu, status: 'locked', subject: 'dl', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第四章 深度学习', duration: '120分钟', difficulty: 'hard' },
+  { id: 'ai-dl4', title: '优化与正则化', description: '梯度下降、Dropout与批归一化', icon: Cpu, status: 'locked', subject: 'dl', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第四章 深度学习', duration: '90分钟', difficulty: 'hard' },
+  // 自然语言处理
+  { id: 'ai-nlp1', title: '文本分析基础', description: '分词、词性标注与命名实体识别', icon: Globe, status: 'unlocked', subject: 'nlp', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第五章 自然语言处理', duration: '60分钟', difficulty: 'medium' },
+  { id: 'ai-nlp2', title: '语言模型', description: 'n-gram、词向量与Transformer', icon: Globe, status: 'unlocked', subject: 'nlp', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第五章 自然语言处理', duration: '120分钟', difficulty: 'hard' },
+  { id: 'ai-nlp3', title: '机器翻译', description: '序列到序列模型与注意力机制', icon: Globe, status: 'locked', subject: 'nlp', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第五章 自然语言处理', duration: '120分钟', difficulty: 'hard' },
+  { id: 'ai-nlp4', title: '情感分析', description: '文本分类与情感倾向识别', icon: Globe, status: 'locked', subject: 'nlp', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第五章 自然语言处理', duration: '90分钟', difficulty: 'medium' },
+  // 计算机视觉
+  { id: 'ai-cv1', title: '图像识别', description: '图像分类与特征提取', icon: Aperture, status: 'unlocked', subject: 'cv', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第六章 计算机视觉', duration: '90分钟', difficulty: 'medium' },
+  { id: 'ai-cv2', title: '目标检测', description: '边界框、IoU与经典检测算法', icon: Aperture, status: 'unlocked', subject: 'cv', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第六章 计算机视觉', duration: '120分钟', difficulty: 'hard' },
+  { id: 'ai-cv3', title: '图像生成', description: '生成对抗网络与扩散模型基础', icon: Aperture, status: 'locked', subject: 'cv', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第六章 计算机视觉', duration: '120分钟', difficulty: 'hard' },
+  { id: 'ai-cv4', title: '视觉应用', description: '人脸识别、OCR与自动驾驶视觉', icon: Aperture, status: 'locked', subject: 'cv', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第六章 计算机视觉', duration: '90分钟', difficulty: 'medium' },
+  // 人工智能伦理
+  { id: 'ai-e1', title: '伦理挑战', description: '算法偏见、公平性与透明度', icon: Shield, status: 'unlocked', subject: 'ethics', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第七章 人工智能伦理', duration: '60分钟', difficulty: 'medium' },
+  { id: 'ai-e2', title: '隐私问题', description: '数据隐私、联邦学习与差分隐私', icon: Shield, status: 'unlocked', subject: 'ethics', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第七章 人工智能伦理', duration: '90分钟', difficulty: 'medium' },
+  { id: 'ai-e3', title: '安全风险', description: '对抗样本、深度伪造与滥用防范', icon: Shield, status: 'locked', subject: 'ethics', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第七章 人工智能伦理', duration: '120分钟', difficulty: 'hard' },
+  { id: 'ai-e4', title: '未来治理', description: 'AI治理框架与 Responsible AI', icon: Shield, status: 'locked', subject: 'ethics', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第七章 人工智能伦理', duration: '90分钟', difficulty: 'medium' }
 ]
 
 
@@ -393,10 +392,13 @@ const subjectGroups = computed(() => {
 })
 
 const subjectMeta: Record<string, { name: string; icon: any; color: string; courseName: string }> = {
-  math: { name: '数学', icon: Calculator, color: '#6366f1', courseName: '高中数学' },
-  physics: { name: '物理', icon: FlaskConical, color: '#f59e0b', courseName: '高中物理' },
-  programming: { name: '编程', icon: Code, color: '#10b981', courseName: 'Python编程' },
-  english: { name: '英语', icon: Globe, color: '#06b6d4', courseName: '高中英语' }
+  overview: { name: '人工智能概述', icon: BookOpen, color: '#3b82f6', courseName: '人工智能导论' },
+  search: { name: '搜索与推理', icon: Search, color: '#f59e0b', courseName: '人工智能导论' },
+  ml: { name: '机器学习', icon: Code, color: '#10b981', courseName: '人工智能导论' },
+  dl: { name: '深度学习', icon: Cpu, color: '#ef4444', courseName: '人工智能导论' },
+  nlp: { name: '自然语言处理', icon: Globe, color: '#8b5cf6', courseName: '人工智能导论' },
+  cv: { name: '计算机视觉', icon: Aperture, color: '#06b6d4', courseName: '人工智能导论' },
+  ethics: { name: '人工智能伦理', icon: Shield, color: '#ec4899', courseName: '人工智能导论' }
 }
 
 // 有数据的学科列表（用于下拉框）
@@ -457,22 +459,6 @@ const stats = computed(() => {
     locked += s.nodes.filter(n => n.status === 'locked').length
   })
   return { total, unlocked, locked }
-})
-
-const totalProgress = computed(() => {
-  const all = visibleSubjects.value
-  if (all.length === 0) return 0
-  const total = all.reduce((sum, s) => sum + s.nodes.length, 0)
-  if (total === 0) return 0
-  const unlocked = all.reduce((sum, s) => sum + s.nodes.filter(n => n.status === 'unlocked').length, 0)
-  return Math.round((unlocked / total) * 100)
-})
-
-const filteredCourseOptions = computed(() => {
-  return courseOptions.filter(c => {
-    if (activeGrade.value !== 'all' && c.grade !== activeGrade.value) return false
-    return true
-  })
 })
 
 // 生成 SVG 路径（使用百分比坐标）

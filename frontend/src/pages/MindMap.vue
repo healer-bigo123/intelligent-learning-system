@@ -7,19 +7,10 @@
         <span class="course-count">{{ filteredCourses.length }} 门课程</span>
       </div>
       <div class="subject-filter">
-        <label>选择科目</label>
+        <label>选择课程</label>
         <select v-model="selectedSubject">
-          <option value="">全部科目</option>
-          <option value="math">数学</option>
-          <option value="physics">物理</option>
-          <option value="chemistry">化学</option>
-          <option value="biology">生物</option>
-          <option value="english">英语</option>
-          <option value="chinese">语文</option>
-          <option value="history">历史</option>
-          <option value="geography">地理</option>
-          <option value="politics">政治</option>
-          <option value="programming">编程</option>
+          <option value="">全部课程</option>
+          <option value="ai-intro">人工智能导论</option>
         </select>
       </div>
       <div class="course-list">
@@ -255,15 +246,15 @@ import { ref, computed, watch, nextTick } from 'vue'
 import {
   Search, X, ChevronRight, ChevronDown,
   BookOpen, Code, Calculator, FlaskConical, Globe,
-  FlaskRound, Heart, Bookmark, MapPin, Users,
-  CheckCircle, Clock, AlertCircle, Target
+  CheckCircle, Clock, AlertCircle, Target,
+  Lightbulb, Cpu, Shield, Aperture
 } from 'lucide-vue-next'
 
 const icons = {
   Search, X, ChevronRight, ChevronDown,
   BookOpen, Code, Calculator, FlaskConical, Globe,
-  FlaskRound, Heart, Bookmark, MapPin, Users,
-  CheckCircle, Clock, AlertCircle, Target
+  CheckCircle, Clock, AlertCircle, Target,
+  Lightbulb, Cpu, Shield, Aperture
 }
 
 // ===== 状态 =====
@@ -312,427 +303,86 @@ interface Course {
 
 const courses: Course[] = [
   {
-    id: 'math',
-    name: '高中数学',
-    description: '函数、几何、概率统计',
-    icon: Calculator,
+    id: 'ai-intro',
+    name: '人工智能导论',
+    description: '人工智能概述、搜索推理、机器学习、深度学习、NLP、CV与AI伦理',
+    icon: Lightbulb,
     color: '#6366f1',
-    chapterCount: 5,
-    progress: 65,
+    chapterCount: 7,
+    progress: 52,
     chapters: [
       {
-        id: 'math-ch1', index: 1, title: '函数与导数', progress: 80,
+        id: 'ai-ch1', index: 1, title: '人工智能概述', progress: 80,
         topics: [
-          { id: 'math-1-1', title: '函数的概念与表示', status: 'completed', description: '理解函数的定义、定义域、值域及表示方法', duration: '45分钟', difficulty: 'easy',
-            subtopics: [{ id: 'math-1-1-1', title: '函数的定义', status: 'completed' }, { id: 'math-1-1-2', title: '定义域与值域', status: 'completed' }, { id: 'math-1-1-3', title: '函数的表示法', status: 'completed' }] },
-          { id: 'math-1-2', title: '函数的单调性与最值', status: 'completed', description: '掌握函数单调性的判断方法及最值求解', duration: '60分钟', difficulty: 'medium',
-            subtopics: [{ id: 'math-1-2-1', title: '单调性的定义', status: 'completed' }, { id: 'math-1-2-2', title: '单调性的证明', status: 'completed' }, { id: 'math-1-2-3', title: '最值问题', status: 'completed' }] },
-          { id: 'math-1-3', title: '导数的概念与计算', status: 'in-progress', description: '理解导数的几何意义，掌握基本求导公式', duration: '90分钟', difficulty: 'hard',
-            subtopics: [{ id: 'math-1-3-1', title: '导数的定义', status: 'completed' }, { id: 'math-1-3-2', title: '基本求导公式', status: 'in-progress' }, { id: 'math-1-3-3', title: '复合函数求导', status: 'not-started' }] },
-          { id: 'math-1-4', title: '导数的应用', status: 'not-started', description: '利用导数研究函数的单调性、极值与最值', duration: '120分钟', difficulty: 'hard',
-            subtopics: [{ id: 'math-1-4-1', title: '单调性应用', status: 'not-started' }, { id: 'math-1-4-2', title: '极值与最值', status: 'not-started' }] }
+          { id: 'ai-1-1', title: '人工智能定义', status: 'completed', description: '理解人工智能的基本概念与核心目标', duration: '45分钟', difficulty: 'easy',
+            subtopics: [{ id: 'ai-1-1-1', title: '强人工智能', status: 'completed' }, { id: 'ai-1-1-2', title: '弱人工智能', status: 'completed' }, { id: 'ai-1-1-3', title: '智能体', status: 'completed' }] },
+          { id: 'ai-1-2', title: '发展历程', status: 'completed', description: '从图灵测试到现代AI的发展脉络', duration: '60分钟', difficulty: 'medium',
+            subtopics: [{ id: 'ai-1-2-1', title: '图灵测试', status: 'completed' }, { id: 'ai-1-2-2', title: '两次AI寒冬', status: 'completed' }] },
+          { id: 'ai-1-3', title: '主要流派', status: 'in-progress', description: '符号主义、连接主义与行为主义', duration: '60分钟', difficulty: 'medium',
+            subtopics: [{ id: 'ai-1-3-1', title: '符号主义', status: 'completed' }, { id: 'ai-1-3-2', title: '连接主义', status: 'in-progress' }, { id: 'ai-1-3-3', title: '行为主义', status: 'not-started' }] },
+          { id: 'ai-1-4', title: '应用领域', status: 'not-started', description: 'AI在医疗、金融、交通等领域的典型应用', duration: '90分钟', difficulty: 'easy',
+            subtopics: [{ id: 'ai-1-4-1', title: '医疗AI', status: 'not-started' }, { id: 'ai-1-4-2', title: '自动驾驶', status: 'not-started' }] }
         ]
       },
       {
-        id: 'math-ch2', index: 2, title: '三角函数', progress: 45,
+        id: 'ai-ch2', index: 2, title: '搜索与推理', progress: 60,
         topics: [
-          { id: 'math-2-1', title: '任意角和弧度制', status: 'completed', duration: '30分钟', difficulty: 'easy' },
-          { id: 'math-2-2', title: '三角函数的定义', status: 'completed', duration: '45分钟', difficulty: 'medium' },
-          { id: 'math-2-3', title: '三角函数的图像与性质', status: 'in-progress', duration: '90分钟', difficulty: 'hard' },
-          { id: 'math-2-4', title: '三角恒等变换', status: 'not-started', duration: '60分钟', difficulty: 'hard' }
+          { id: 'ai-2-1', title: '问题求解', status: 'completed', description: '状态空间、搜索树与问题归约', duration: '60分钟', difficulty: 'medium' },
+          { id: 'ai-2-2', title: '盲目搜索', status: 'completed', description: '深度优先、广度优先与一致代价搜索', duration: '90分钟', difficulty: 'medium' },
+          { id: 'ai-2-3', title: '启发式搜索', status: 'in-progress', description: 'A*算法与启发函数设计', duration: '120分钟', difficulty: 'hard',
+            subtopics: [{ id: 'ai-2-3-1', title: 'A*算法', status: 'in-progress' }, { id: 'ai-2-3-2', title: '可采纳性', status: 'not-started' }] },
+          { id: 'ai-2-4', title: '知识表示', status: 'not-started', description: '谓词逻辑、语义网络与知识图谱', duration: '90分钟', difficulty: 'hard' },
+          { id: 'ai-2-5', title: '推理方法', status: 'not-started', description: '演绎推理、归纳推理与不确定性推理', duration: '120分钟', difficulty: 'hard' }
         ]
       },
       {
-        id: 'math-ch3', index: 3, title: '数列', progress: 100,
+        id: 'ai-ch3', index: 3, title: '机器学习', progress: 60,
         topics: [
-          { id: 'math-3-1', title: '数列的概念', status: 'completed', duration: '30分钟', difficulty: 'easy' },
-          { id: 'math-3-2', title: '等差数列', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'math-3-3', title: '等比数列', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'math-3-4', title: '数列求和', status: 'completed', duration: '90分钟', difficulty: 'hard' }
+          { id: 'ai-3-1', title: '机器学习概述', status: 'completed', description: '学习范式、数据集与模型评估', duration: '60分钟', difficulty: 'easy' },
+          { id: 'ai-3-2', title: '监督学习', status: 'completed', description: '分类与回归：KNN、决策树与线性回归', duration: '120分钟', difficulty: 'medium',
+            subtopics: [{ id: 'ai-3-2-1', title: 'KNN', status: 'completed' }, { id: 'ai-3-2-2', title: '决策树', status: 'completed' }, { id: 'ai-3-2-3', title: '线性回归', status: 'in-progress' }] },
+          { id: 'ai-3-3', title: '无监督学习', status: 'in-progress', description: '聚类与降维：K-Means与PCA', duration: '90分钟', difficulty: 'medium' },
+          { id: 'ai-3-4', title: '强化学习', status: 'not-started', description: '智能体、奖励与策略梯度基础', duration: '120分钟', difficulty: 'hard' },
+          { id: 'ai-3-5', title: '模型评估', status: 'not-started', description: '交叉验证、过拟合与正则化', duration: '90分钟', difficulty: 'medium' }
         ]
       },
       {
-        id: 'math-ch4', index: 4, title: '立体几何', progress: 30,
+        id: 'ai-ch4', index: 4, title: '深度学习', progress: 50,
         topics: [
-          { id: 'math-4-1', title: '空间几何体', status: 'completed', duration: '45分钟', difficulty: 'medium' },
-          { id: 'math-4-2', title: '点、线、面的位置关系', status: 'in-progress', duration: '90分钟', difficulty: 'hard' },
-          { id: 'math-4-3', title: '空间向量与立体几何', status: 'not-started', duration: '120分钟', difficulty: 'hard' }
+          { id: 'ai-4-1', title: '神经网络基础', status: 'completed', description: '感知机、多层网络与反向传播', duration: '120分钟', difficulty: 'medium',
+            subtopics: [{ id: 'ai-4-1-1', title: '感知机', status: 'completed' }, { id: 'ai-4-1-2', title: '反向传播', status: 'completed' }] },
+          { id: 'ai-4-2', title: '卷积神经网络', status: 'in-progress', description: '卷积、池化与CNN典型结构', duration: '120分钟', difficulty: 'hard' },
+          { id: 'ai-4-3', title: '循环神经网络', status: 'not-started', description: 'RNN、LSTM与序列建模', duration: '120分钟', difficulty: 'hard' },
+          { id: 'ai-4-4', title: '优化与正则化', status: 'not-started', description: '梯度下降、Dropout与批归一化', duration: '90分钟', difficulty: 'hard' }
         ]
       },
       {
-        id: 'math-ch5', index: 5, title: '概率与统计', progress: 60,
+        id: 'ai-ch5', index: 5, title: '自然语言处理', progress: 50,
         topics: [
-          { id: 'math-5-1', title: '随机事件的概率', status: 'completed', duration: '45分钟', difficulty: 'medium' },
-          { id: 'math-5-2', title: '古典概型', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'math-5-3', title: '统计案例', status: 'in-progress', duration: '90分钟', difficulty: 'hard' }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'physics',
-    name: '高中物理',
-    description: '力学、电磁学、光学',
-    icon: FlaskConical,
-    color: '#f59e0b',
-    chapterCount: 4,
-    progress: 40,
-    chapters: [
-      {
-        id: 'phy-ch1', index: 1, title: '运动的描述', progress: 80,
-        topics: [
-          { id: 'phy-1-1', title: '质点参考系', status: 'completed', duration: '30分钟', difficulty: 'easy' },
-          { id: 'phy-1-2', title: '时间和位移', status: 'completed', duration: '45分钟', difficulty: 'easy' },
-          { id: 'phy-1-3', title: '速度', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'phy-1-4', title: '加速度', status: 'in-progress', duration: '60分钟', difficulty: 'medium' }
+          { id: 'ai-5-1', title: '文本分析基础', status: 'completed', description: '分词、词性标注与命名实体识别', duration: '60分钟', difficulty: 'medium' },
+          { id: 'ai-5-2', title: '语言模型', status: 'in-progress', description: 'n-gram、词向量与Transformer', duration: '120分钟', difficulty: 'hard',
+            subtopics: [{ id: 'ai-5-2-1', title: 'Word2Vec', status: 'completed' }, { id: 'ai-5-2-2', title: 'Transformer', status: 'in-progress' }] },
+          { id: 'ai-5-3', title: '机器翻译', status: 'not-started', description: '序列到序列模型与注意力机制', duration: '120分钟', difficulty: 'hard' },
+          { id: 'ai-5-4', title: '情感分析', status: 'not-started', description: '文本分类与情感倾向识别', duration: '90分钟', difficulty: 'medium' }
         ]
       },
       {
-        id: 'phy-ch2', index: 2, title: '匀变速直线运动', progress: 60,
+        id: 'ai-ch6', index: 6, title: '计算机视觉', progress: 50,
         topics: [
-          { id: 'phy-2-1', title: '实验：探究小车速度', status: 'completed', duration: '90分钟', difficulty: 'medium' },
-          { id: 'phy-2-2', title: '匀变速直线运动规律', status: 'in-progress', duration: '120分钟', difficulty: 'hard' },
-          { id: 'phy-2-3', title: '自由落体运动', status: 'not-started', duration: '60分钟', difficulty: 'medium' }
+          { id: 'ai-6-1', title: '图像识别', status: 'completed', description: '图像分类与特征提取', duration: '90分钟', difficulty: 'medium' },
+          { id: 'ai-6-2', title: '目标检测', status: 'in-progress', description: '边界框、IoU与经典检测算法', duration: '120分钟', difficulty: 'hard',
+            subtopics: [{ id: 'ai-6-2-1', title: 'IoU', status: 'completed' }, { id: 'ai-6-2-2', title: 'YOLO', status: 'in-progress' }] },
+          { id: 'ai-6-3', title: '图像生成', status: 'not-started', description: '生成对抗网络与扩散模型基础', duration: '120分钟', difficulty: 'hard' },
+          { id: 'ai-6-4', title: '视觉应用', status: 'not-started', description: '人脸识别、OCR与自动驾驶视觉', duration: '90分钟', difficulty: 'medium' }
         ]
       },
       {
-        id: 'phy-ch3', index: 3, title: '相互作用', progress: 20,
+        id: 'ai-ch7', index: 7, title: '人工智能伦理', progress: 50,
         topics: [
-          { id: 'phy-3-1', title: '重力基本相互作用', status: 'completed', duration: '45分钟', difficulty: 'easy' },
-          { id: 'phy-3-2', title: '弹力', status: 'in-progress', duration: '60分钟', difficulty: 'medium' },
-          { id: 'phy-3-3', title: '摩擦力', status: 'not-started', duration: '90分钟', difficulty: 'hard' },
-          { id: 'phy-3-4', title: '力的合成与分解', status: 'not-started', duration: '120分钟', difficulty: 'hard' }
-        ]
-      },
-      {
-        id: 'phy-ch4', index: 4, title: '牛顿运动定律', progress: 0,
-        topics: [
-          { id: 'phy-4-1', title: '牛顿第一定律', status: 'not-started', duration: '60分钟', difficulty: 'medium' },
-          { id: 'phy-4-2', title: '牛顿第二定律', status: 'not-started', duration: '90分钟', difficulty: 'hard' },
-          { id: 'phy-4-3', title: '牛顿第三定律', status: 'not-started', duration: '60分钟', difficulty: 'medium' }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'programming',
-    name: 'Python编程',
-    description: '基础语法、数据结构、算法',
-    icon: Code,
-    color: '#10b981',
-    chapterCount: 4,
-    progress: 75,
-    chapters: [
-      {
-        id: 'prog-ch1', index: 1, title: 'Python基础', progress: 100,
-        topics: [
-          { id: 'prog-1-1', title: '变量与数据类型', status: 'completed', duration: '45分钟', difficulty: 'easy' },
-          { id: 'prog-1-2', title: '运算符与表达式', status: 'completed', duration: '30分钟', difficulty: 'easy' },
-          { id: 'prog-1-3', title: '条件语句', status: 'completed', duration: '60分钟', difficulty: 'easy' },
-          { id: 'prog-1-4', title: '循环语句', status: 'completed', duration: '60分钟', difficulty: 'medium' }
-        ]
-      },
-      {
-        id: 'prog-ch2', index: 2, title: '函数与模块', progress: 80,
-        topics: [
-          { id: 'prog-2-1', title: '函数定义与调用', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'prog-2-2', title: '参数与返回值', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'prog-2-3', title: '模块与包', status: 'in-progress', duration: '90分钟', difficulty: 'hard' }
-        ]
-      },
-      {
-        id: 'prog-ch3', index: 3, title: '数据结构', progress: 60,
-        topics: [
-          { id: 'prog-3-1', title: '列表与元组', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'prog-3-2', title: '字典与集合', status: 'in-progress', duration: '90分钟', difficulty: 'medium' },
-          { id: 'prog-3-3', title: '字符串操作', status: 'in-progress', duration: '60分钟', difficulty: 'medium' }
-        ]
-      },
-      {
-        id: 'prog-ch4', index: 4, title: '面向对象编程', progress: 30,
-        topics: [
-          { id: 'prog-4-1', title: '类与对象', status: 'completed', duration: '90分钟', difficulty: 'hard' },
-          { id: 'prog-4-2', title: '继承与多态', status: 'in-progress', duration: '120分钟', difficulty: 'hard' },
-          { id: 'prog-4-3', title: '异常处理', status: 'not-started', duration: '60分钟', difficulty: 'medium' }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'english',
-    name: '高中英语',
-    description: '语法、词汇、阅读、写作',
-    icon: Globe,
-    color: '#06b6d4',
-    chapterCount: 4,
-    progress: 55,
-    chapters: [
-      {
-        id: 'eng-ch1', index: 1, title: '语法基础', progress: 70,
-        topics: [
-          { id: 'eng-1-1', title: '时态与语态', status: 'completed', duration: '90分钟', difficulty: 'medium',
-            subtopics: [{ id: 'eng-1-1-1', title: '一般现在时', status: 'completed' }, { id: 'eng-1-1-2', title: '现在进行时', status: 'completed' }, { id: 'eng-1-1-3', title: '被动语态', status: 'in-progress' }] },
-          { id: 'eng-1-2', title: '从句', status: 'in-progress', duration: '120分钟', difficulty: 'hard',
-            subtopics: [{ id: 'eng-1-2-1', title: '定语从句', status: 'completed' }, { id: 'eng-1-2-2', title: '状语从句', status: 'in-progress' }, { id: 'eng-1-2-3', title: '名词性从句', status: 'not-started' }] },
-          { id: 'eng-1-3', title: '非谓语动词', status: 'in-progress', duration: '90分钟', difficulty: 'hard',
-            subtopics: [{ id: 'eng-1-3-1', title: '不定式', status: 'in-progress' }, { id: 'eng-1-3-2', title: '动名词', status: 'not-started' }, { id: 'eng-1-3-3', title: '分词', status: 'not-started' }] }
-        ]
-      },
-      {
-        id: 'eng-ch2', index: 2, title: '词汇拓展', progress: 60,
-        topics: [
-          { id: 'eng-2-1', title: '词根词缀', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'eng-2-2', title: '高频词汇', status: 'in-progress', duration: '120分钟', difficulty: 'medium' },
-          { id: 'eng-2-3', title: '短语搭配', status: 'in-progress', duration: '90分钟', difficulty: 'medium' }
-        ]
-      },
-      {
-        id: 'eng-ch3', index: 3, title: '阅读理解', progress: 40,
-        topics: [
-          { id: 'eng-3-1', title: '阅读技巧', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'eng-3-2', title: '主旨大意题', status: 'in-progress', duration: '90分钟', difficulty: 'hard' },
-          { id: 'eng-3-3', title: '推理判断题', status: 'not-started', duration: '90分钟', difficulty: 'hard' }
-        ]
-      },
-      {
-        id: 'eng-ch4', index: 4, title: '写作技巧', progress: 20,
-        topics: [
-          { id: 'eng-4-1', title: '应用文写作', status: 'in-progress', duration: '90分钟', difficulty: 'medium' },
-          { id: 'eng-4-2', title: '议论文写作', status: 'not-started', duration: '120分钟', difficulty: 'hard' }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'chemistry',
-    name: '高中化学',
-    description: '无机化学、有机化学、化学反应',
-    icon: FlaskRound,
-    color: '#ef4444',
-    chapterCount: 4,
-    progress: 35,
-    chapters: [
-      { id: 'chem-ch1', index: 1, title: '物质结构', progress: 80,
-        topics: [
-          { id: 'chem-1-1', title: '原子结构', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'chem-1-2', title: '化学键', status: 'completed', duration: '90分钟', difficulty: 'hard' },
-          { id: 'chem-1-3', title: '晶体结构', status: 'in-progress', duration: '60分钟', difficulty: 'medium' }
-        ]
-      },
-      { id: 'chem-ch2', index: 2, title: '化学反应原理', progress: 50,
-        topics: [
-          { id: 'chem-2-1', title: '化学反应速率', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'chem-2-2', title: '化学平衡', status: 'in-progress', duration: '120分钟', difficulty: 'hard' },
-          { id: 'chem-2-3', title: '电化学', status: 'not-started', duration: '90分钟', difficulty: 'hard' }
-        ]
-      },
-      { id: 'chem-ch3', index: 3, title: '有机化学', progress: 20,
-        topics: [
-          { id: 'chem-3-1', title: '烃类化合物', status: 'completed', duration: '90分钟', difficulty: 'medium' },
-          { id: 'chem-3-2', title: '烃的衍生物', status: 'in-progress', duration: '120分钟', difficulty: 'hard' },
-          { id: 'chem-3-3', title: '有机合成', status: 'not-started', duration: '120分钟', difficulty: 'hard' }
-        ]
-      },
-      { id: 'chem-ch4', index: 4, title: '元素及其化合物', progress: 10,
-        topics: [
-          { id: 'chem-4-1', title: '金属元素', status: 'in-progress', duration: '90分钟', difficulty: 'medium' },
-          { id: 'chem-4-2', title: '非金属元素', status: 'not-started', duration: '90分钟', difficulty: 'medium' },
-          { id: 'chem-4-3', title: '化合物性质', status: 'not-started', duration: '60分钟', difficulty: 'medium' }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'biology',
-    name: '高中生物',
-    description: '细胞、遗传、生态系统',
-    icon: Heart,
-    color: '#14b8a6',
-    chapterCount: 4,
-    progress: 45,
-    chapters: [
-      { id: 'bio-ch1', index: 1, title: '细胞结构与功能', progress: 90,
-        topics: [
-          { id: 'bio-1-1', title: '细胞膜与细胞器', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'bio-1-2', title: '细胞代谢', status: 'completed', duration: '90分钟', difficulty: 'hard' },
-          { id: 'bio-1-3', title: '细胞分裂', status: 'in-progress', duration: '60分钟', difficulty: 'medium' }
-        ]
-      },
-      { id: 'bio-ch2', index: 2, title: '遗传与进化', progress: 60,
-        topics: [
-          { id: 'bio-2-1', title: '孟德尔遗传定律', status: 'completed', duration: '90分钟', difficulty: 'hard' },
-          { id: 'bio-2-2', title: 'DNA与基因', status: 'in-progress', duration: '120分钟', difficulty: 'hard' },
-          { id: 'bio-2-3', title: '生物进化', status: 'not-started', duration: '60分钟', difficulty: 'medium' }
-        ]
-      },
-      { id: 'bio-ch3', index: 3, title: '生命活动调节', progress: 30,
-        topics: [
-          { id: 'bio-3-1', title: '神经调节', status: 'completed', duration: '90分钟', difficulty: 'medium' },
-          { id: 'bio-3-2', title: '体液调节', status: 'in-progress', duration: '90分钟', difficulty: 'medium' },
-          { id: 'bio-3-3', title: '免疫调节', status: 'not-started', duration: '90分钟', difficulty: 'hard' }
-        ]
-      },
-      { id: 'bio-ch4', index: 4, title: '生态系统', progress: 20,
-        topics: [
-          { id: 'bio-4-1', title: '生态系统结构', status: 'in-progress', duration: '60分钟', difficulty: 'medium' },
-          { id: 'bio-4-2', title: '能量流动', status: 'not-started', duration: '60分钟', difficulty: 'medium' },
-          { id: 'bio-4-3', title: '生态平衡', status: 'not-started', duration: '60分钟', difficulty: 'medium' }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'chinese',
-    name: '高中语文',
-    description: '文言文、现代文、写作',
-    icon: Bookmark,
-    color: '#ec4899',
-    chapterCount: 4,
-    progress: 50,
-    chapters: [
-      { id: 'chin-ch1', index: 1, title: '文言文阅读', progress: 70,
-        topics: [
-          { id: 'chin-1-1', title: '实词虚词', status: 'completed', duration: '90分钟', difficulty: 'medium' },
-          { id: 'chin-1-2', title: '句式语法', status: 'completed', duration: '90分钟', difficulty: 'medium' },
-          { id: 'chin-1-3', title: '文言文翻译', status: 'in-progress', duration: '120分钟', difficulty: 'hard' }
-        ]
-      },
-      { id: 'chin-ch2', index: 2, title: '现代文阅读', progress: 60,
-        topics: [
-          { id: 'chin-2-1', title: '论述类文本', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'chin-2-2', title: '文学类文本', status: 'in-progress', duration: '90分钟', difficulty: 'hard' },
-          { id: 'chin-2-3', title: '实用类文本', status: 'in-progress', duration: '60分钟', difficulty: 'medium' }
-        ]
-      },
-      { id: 'chin-ch3', index: 3, title: '古代诗歌', progress: 40,
-        topics: [
-          { id: 'chin-3-1', title: '诗歌鉴赏', status: 'completed', duration: '90分钟', difficulty: 'hard' },
-          { id: 'chin-3-2', title: '诗歌默写', status: 'in-progress', duration: '60分钟', difficulty: 'easy' },
-          { id: 'chin-3-3', title: '诗歌表达', status: 'not-started', duration: '60分钟', difficulty: 'medium' }
-        ]
-      },
-      { id: 'chin-ch4', index: 4, title: '写作', progress: 30,
-        topics: [
-          { id: 'chin-4-1', title: '审题立意', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'chin-4-2', title: '文章结构', status: 'in-progress', duration: '90分钟', difficulty: 'medium' },
-          { id: 'chin-4-3', title: '语言表达', status: 'not-started', duration: '90分钟', difficulty: 'hard' }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'history',
-    name: '高中历史',
-    description: '中国史、世界史、近代史',
-    icon: BookOpen,
-    color: '#8b5cf6',
-    chapterCount: 4,
-    progress: 30,
-    chapters: [
-      { id: 'hist-ch1', index: 1, title: '中国古代史', progress: 60,
-        topics: [
-          { id: 'hist-1-1', title: '先秦时期', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'hist-1-2', title: '秦汉至隋唐', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'hist-1-3', title: '宋元明清', status: 'in-progress', duration: '90分钟', difficulty: 'hard' }
-        ]
-      },
-      { id: 'hist-ch2', index: 2, title: '中国近代史', progress: 40,
-        topics: [
-          { id: 'hist-2-1', title: '晚清时期', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'hist-2-2', title: '民国时期', status: 'in-progress', duration: '90分钟', difficulty: 'medium' },
-          { id: 'hist-2-3', title: '新中国史', status: 'not-started', duration: '60分钟', difficulty: 'medium' }
-        ]
-      },
-      { id: 'hist-ch3', index: 3, title: '世界古代史', progress: 20,
-        topics: [
-          { id: 'hist-3-1', title: '古代文明', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'hist-3-2', title: '中世纪', status: 'in-progress', duration: '60分钟', difficulty: 'medium' },
-          { id: 'hist-3-3', title: '文艺复兴', status: 'not-started', duration: '60分钟', difficulty: 'medium' }
-        ]
-      },
-      { id: 'hist-ch4', index: 4, title: '世界近现代史', progress: 10,
-        topics: [
-          { id: 'hist-4-1', title: '工业革命', status: 'in-progress', duration: '90分钟', difficulty: 'medium' },
-          { id: 'hist-4-2', title: '两次世界大战', status: 'not-started', duration: '90分钟', difficulty: 'hard' },
-          { id: 'hist-4-3', title: '冷战与全球化', status: 'not-started', duration: '60分钟', difficulty: 'medium' }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'geography',
-    name: '高中地理',
-    description: '自然地理、人文地理、区域地理',
-    icon: MapPin,
-    color: '#10b981',
-    chapterCount: 4,
-    progress: 25,
-    chapters: [
-      { id: 'geo-ch1', index: 1, title: '地球与地图', progress: 70,
-        topics: [
-          { id: 'geo-1-1', title: '地球运动', status: 'completed', duration: '90分钟', difficulty: 'hard' },
-          { id: 'geo-1-2', title: '地图知识', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'geo-1-3', title: '等高线', status: 'in-progress', duration: '60分钟', difficulty: 'medium' }
-        ]
-      },
-      { id: 'geo-ch2', index: 2, title: '自然地理', progress: 40,
-        topics: [
-          { id: 'geo-2-1', title: '大气运动', status: 'completed', duration: '90分钟', difficulty: 'hard' },
-          { id: 'geo-2-2', title: '水循环', status: 'in-progress', duration: '60分钟', difficulty: 'medium' },
-          { id: 'geo-2-3', title: '地质地貌', status: 'not-started', duration: '90分钟', difficulty: 'hard' }
-        ]
-      },
-      { id: 'geo-ch3', index: 3, title: '人文地理', progress: 20,
-        topics: [
-          { id: 'geo-3-1', title: '人口与城市', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'geo-3-2', title: '农业区位', status: 'in-progress', duration: '90分钟', difficulty: 'medium' },
-          { id: 'geo-3-3', title: '工业区位', status: 'not-started', duration: '90分钟', difficulty: 'medium' }
-        ]
-      },
-      { id: 'geo-ch4', index: 4, title: '区域地理', progress: 10,
-        topics: [
-          { id: 'geo-4-1', title: '中国区域', status: 'in-progress', duration: '90分钟', difficulty: 'medium' },
-          { id: 'geo-4-2', title: '世界区域', status: 'not-started', duration: '90分钟', difficulty: 'medium' },
-          { id: 'geo-4-3', title: '区域可持续发展', status: 'not-started', duration: '90分钟', difficulty: 'hard' }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'politics',
-    name: '高中政治',
-    description: '经济、政治、哲学、法治',
-    icon: Users,
-    color: '#f97316',
-    chapterCount: 4,
-    progress: 40,
-    chapters: [
-      { id: 'pol-ch1', index: 1, title: '经济生活', progress: 70,
-        topics: [
-          { id: 'pol-1-1', title: '商品与货币', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'pol-1-2', title: '消费与生产', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'pol-1-3', title: '市场经济', status: 'in-progress', duration: '90分钟', difficulty: 'hard' }
-        ]
-      },
-      { id: 'pol-ch2', index: 2, title: '政治生活', progress: 50,
-        topics: [
-          { id: 'pol-2-1', title: '公民与政府', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'pol-2-2', title: '政党制度', status: 'in-progress', duration: '60分钟', difficulty: 'medium' },
-          { id: 'pol-2-3', title: '国际社会', status: 'not-started', duration: '60分钟', difficulty: 'medium' }
-        ]
-      },
-      { id: 'pol-ch3', index: 3, title: '文化生活', progress: 30,
-        topics: [
-          { id: 'pol-3-1', title: '文化传承', status: 'completed', duration: '60分钟', difficulty: 'medium' },
-          { id: 'pol-3-2', title: '文化创新', status: 'in-progress', duration: '60分钟', difficulty: 'medium' },
-          { id: 'pol-3-3', title: '中华文化', status: 'not-started', duration: '60分钟', difficulty: 'medium' }
-        ]
-      },
-      { id: 'pol-ch4', index: 4, title: '生活与哲学', progress: 20,
-        topics: [
-          { id: 'pol-4-1', title: '唯物论', status: 'in-progress', duration: '90分钟', difficulty: 'hard' },
-          { id: 'pol-4-2', title: '辩证法', status: 'not-started', duration: '120分钟', difficulty: 'hard' },
-          { id: 'pol-4-3', title: '认识论', status: 'not-started', duration: '90分钟', difficulty: 'hard' }
+          { id: 'ai-7-1', title: '伦理挑战', status: 'completed', description: '算法偏见、公平性与透明度', duration: '60分钟', difficulty: 'medium' },
+          { id: 'ai-7-2', title: '隐私问题', status: 'in-progress', description: '数据隐私、联邦学习与差分隐私', duration: '90分钟', difficulty: 'medium' },
+          { id: 'ai-7-3', title: '安全风险', status: 'not-started', description: '对抗样本、深度伪造与滥用防范', duration: '120分钟', difficulty: 'hard' },
+          { id: 'ai-7-4', title: '未来治理', status: 'not-started', description: 'AI治理框架与 Responsible AI', duration: '90分钟', difficulty: 'medium' }
         ]
       }
     ]
@@ -779,7 +429,6 @@ function computeMindMap() {
 
   const nodes: MindNode[] = []
   const conns: Connection[] = []
-  const color = selectedCourse.value.color
 
   // 中心节点
   nodes.push({

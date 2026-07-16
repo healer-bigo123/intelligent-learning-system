@@ -127,8 +127,8 @@ const notifications = ref<Notification[]>([
   {
     id: 2,
     type: 'homework',
-    title: '作业提醒：高等数学期中测验',
-    description: '《高等数学》期中测验将于明天 9:00 开始，请提前做好准备。',
+    title: '作业提醒：人工智能导论期中测验',
+    description: '《人工智能导论》期中测验将于明天 9:00 开始，请提前做好准备。',
     timeAgo: '30分钟前',
     read: false,
     createdAt: minutesAgo(30)
@@ -172,8 +172,8 @@ const notifications = ref<Notification[]>([
   {
     id: 7,
     type: 'homework',
-    title: '作业批改完成：线性代数第三章',
-    description: '你提交的《线性代数》第三章作业已批改完成，得分 92 分，点击查看详细反馈。',
+    title: '作业批改完成：机器学习第三章',
+    description: '你提交的《人工智能导论》机器学习第三章作业已批改完成，得分 92 分，点击查看详细反馈。',
     timeAgo: '昨天 14:20',
     read: true,
     createdAt: minutesAgo(60 * 22)

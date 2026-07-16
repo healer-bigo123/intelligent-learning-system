@@ -5,7 +5,7 @@
       <div class="search-section">
         <div class="search-box">
           <component :is="icons.Search" class="search-icon" />
-          <input type="text" v-model="searchQuery" placeholder="搜索课程、讲师..." class="search-input" />
+          <input type="text" v-model="searchQuery" placeholder="搜索AI知识点、章节、讲师..." class="search-input" />
           <button class="search-btn">
             <component :is="icons.Search" class="btn-icon" />
           </button>
@@ -13,7 +13,7 @@
       </div>
 
       <select v-model="activeCategory" class="filter-select">
-        <option value="all">全部学科</option>
+        <option value="all">全部章节</option>
         <option v-for="tab in categoryTabs.filter(t => t.id !== 'all')" :key="tab.id" :value="tab.id">{{ tab.label }}</option>
       </select>
 
@@ -34,7 +34,7 @@
     <div v-if="loading" class="loading-state">加载中...</div>
     <div v-else-if="sortedCourses.length === 0" class="empty-state">暂无学习资料</div>
     <div v-else class="courses-grid">
-      <div v-for="course in sortedCourses" :key="course.id" class="course-card">
+      <div v-for="course in sortedCourses" :key="course.id" class="course-card card">
         <div class="course-cover" :style="{ background: course.coverColor }">
           <button
             class="favorite-btn"
@@ -141,17 +141,14 @@ const icons = {
 }
 
 const categoryTabs = [
-  { id: 'all', label: '全部学科', icon: BookOpen, color: '#6366f1' },
-  { id: 'math', label: '数学', icon: Calculator, color: '#3b82f6' },
-  { id: 'physics', label: '物理', icon: FlaskConical, color: '#10b981' },
-  { id: 'chemistry', label: '化学', icon: FlaskConical, color: '#ef4444' },
-  { id: 'biology', label: '生物', icon: FlaskConical, color: '#06b6d4' },
-  { id: 'english', label: '英语', icon: Globe, color: '#f59e0b' },
-  { id: 'chinese', label: '语文', icon: BookOpen, color: '#ec4899' },
-  { id: 'history', label: '历史', icon: BookOpen, color: '#8b5cf6' },
-  { id: 'geography', label: '地理', icon: Globe, color: '#14b8a6' },
-  { id: 'politics', label: '政治', icon: BookOpen, color: '#f97316' },
-  { id: 'programming', label: '编程', icon: Code, color: '#8b5cf6' }
+  { id: 'all', label: '全部章节', icon: BookOpen, color: '#6366f1' },
+  { id: 'overview', label: 'AI概述', icon: BookOpen, color: '#3b82f6' },
+  { id: 'search', label: '搜索与推理', icon: Calculator, color: '#f59e0b' },
+  { id: 'ml', label: '机器学习', icon: Code, color: '#10b981' },
+  { id: 'dl', label: '深度学习', icon: Code, color: '#ef4444' },
+  { id: 'nlp', label: '自然语言处理', icon: Globe, color: '#8b5cf6' },
+  { id: 'cv', label: '计算机视觉', icon: BookOpen, color: '#06b6d4' },
+  { id: 'ethics', label: 'AI伦理', icon: BookOpen, color: '#ec4899' }
 ]
 
 const searchQuery = ref('')
@@ -166,19 +163,23 @@ const loading = ref(false)
 const favoriteMap = ref<Record<string, { isFavorited: boolean; favoriteId: number | null }>>({})
 
 const categoryMap: Record<string, string> = {
-  math: '数学',
-  physics: '物理',
-  chemistry: '化学',
-  english: '英语',
-  programming: '编程'
+  overview: '人工智能概述',
+  search: '搜索与推理',
+  ml: '机器学习',
+  dl: '深度学习',
+  nlp: '自然语言处理',
+  cv: '计算机视觉',
+  ethics: '人工智能伦理'
 }
 
 const colorMap: Record<string, string> = {
-  '数学': '#3b82f6',
-  '物理': '#10b981',
-  '化学': '#ef4444',
-  '英语': '#f59e0b',
-  '编程': '#8b5cf6'
+  '人工智能概述': '#3b82f6',
+  '搜索与推理': '#f59e0b',
+  '机器学习': '#10b981',
+  '深度学习': '#ef4444',
+  '自然语言处理': '#8b5cf6',
+  '计算机视觉': '#06b6d4',
+  '人工智能伦理': '#ec4899'
 }
 
 // 从后端加载学习资料
@@ -188,20 +189,6 @@ const loadResources = async () => {
     const params: any = {
       page: currentPage.value,
       page_size: pageSize
-    }
-
-    // 映射分类
-    const categoryMap: Record<string, string> = {
-      math: '数学',
-      physics: '物理',
-      chemistry: '化学',
-      biology: '生物',
-      english: '英语',
-      chinese: '语文',
-      history: '历史',
-      geography: '地理',
-      politics: '政治',
-      programming: '编程'
     }
 
     if (activeCategory.value !== 'all') {
@@ -223,7 +210,7 @@ const loadResources = async () => {
       description: item.content?.substring(0, 50) + '...' || '暂无描述',
       fullContent: item.content,
       category: item.subject,
-      categoryId: Object.entries(categoryMap).find(([k, v]) => v === item.subject)?.[0] || 'math',
+      categoryId: Object.entries(categoryMap).find(([_k, v]) => v === item.subject)?.[0] || 'overview',
       coverColor: `linear-gradient(135deg, ${colorMap[item.subject] || '#6366f1'}, ${colorMap[item.subject] || '#6366f1'}dd)`,
       instructor: item.source || '系统',
       instructorColor: colorMap[item.subject] || '#6366f1',
@@ -523,17 +510,11 @@ onMounted(() => {
 }
 
 .course-card {
-  background: linear-gradient(145deg, rgba(40, 54, 71, 0.95), rgba(26, 37, 52, 0.98));
-  border: 2px solid rgba(71, 85, 105, 0.7);
-  border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  padding: 0;
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
-    border-color: rgba(99, 102, 241, 0.5);
   }
 }
 

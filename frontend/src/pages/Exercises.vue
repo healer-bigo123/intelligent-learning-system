@@ -59,17 +59,14 @@
       <div class="filter-bar">
         <div class="filter-left">
           <select v-model="filterSubject" class="filter-select" @change="loadExercises">
-            <option value="">全部学科</option>
-            <option value="数学">数学</option>
-            <option value="物理">物理</option>
-            <option value="化学">化学</option>
-            <option value="生物">生物</option>
-            <option value="英语">英语</option>
-            <option value="语文">语文</option>
-            <option value="历史">历史</option>
-            <option value="地理">地理</option>
-            <option value="政治">政治</option>
-            <option value="编程">编程</option>
+            <option value="">全部章节</option>
+            <option value="人工智能概述">人工智能概述</option>
+            <option value="搜索与推理">搜索与推理</option>
+            <option value="机器学习">机器学习</option>
+            <option value="深度学习">深度学习</option>
+            <option value="自然语言处理">自然语言处理</option>
+            <option value="计算机视觉">计算机视觉</option>
+            <option value="人工智能伦理">人工智能伦理</option>
           </select>
           <select v-model="filterType" class="filter-select" @change="loadExercises">
             <option value="">全部题型</option>
@@ -101,7 +98,7 @@
         <div
           v-for="exercise in exercises"
           :key="exercise.id"
-          class="exercise-card"
+          class="exercise-card card"
         >
           <div class="exercise-header">
             <span class="type-tag" :class="exercise.type">{{ getTypeText(exercise.type) }}</span>
@@ -220,19 +217,16 @@
             </div>
             <div class="modal-body">
               <div class="form-group">
-                <label>选择学科</label>
+                <label>选择章节</label>
                 <select v-model="sessionForm.subject">
                   <option value="">请选择</option>
-                  <option value="数学">数学</option>
-                  <option value="物理">物理</option>
-                  <option value="化学">化学</option>
-                  <option value="生物">生物</option>
-                  <option value="英语">英语</option>
-                  <option value="语文">语文</option>
-                  <option value="历史">历史</option>
-                  <option value="地理">地理</option>
-                  <option value="政治">政治</option>
-                  <option value="编程">编程</option>
+                  <option value="人工智能概述">人工智能概述</option>
+                  <option value="搜索与推理">搜索与推理</option>
+                  <option value="机器学习">机器学习</option>
+                  <option value="深度学习">深度学习</option>
+                  <option value="自然语言处理">自然语言处理</option>
+                  <option value="计算机视觉">计算机视觉</option>
+                  <option value="人工智能伦理">人工智能伦理</option>
                 </select>
               </div>
               <div class="form-group">

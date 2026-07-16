@@ -60,7 +60,7 @@
 
     <!-- 图表区域 -->
     <div class="charts-section">
-      <div class="chart-card">
+      <div class="chart-card card">
         <div class="chart-header">
           <h3 class="chart-title">
             <component :is="icons.BarChart" class="title-icon" />
@@ -95,7 +95,7 @@
         </div>
       </div>
 
-      <div class="chart-card">
+      <div class="chart-card card">
         <div class="chart-header">
           <h3 class="chart-title">
             <component :is="icons.PieChart" class="title-icon" />
@@ -202,21 +202,23 @@
 import { ref, computed, type Component, onMounted, watch } from 'vue'
 import {
   Clock, Target, CheckSquare, TrendingUp, BarChart,
-  PieChart, History, Play, Calculator, Globe, FlaskConical, Code
+  PieChart, History, Play, BookOpen, Search, Code, Cpu, Globe, Aperture, Shield
 } from 'lucide-vue-next'
 import { api } from '@/api/client'
 
 const icons = {
   Clock, Target, CheckSquare, TrendingUp, BarChart,
-  PieChart, History, Play, Calculator, Globe, FlaskConical, Code
+  PieChart, History, Play, BookOpen, Search, Code, Cpu, Globe, Aperture, Shield
 }
 
 const courseIconMap: Record<string, Component> = {
-  数学: Calculator,
-  英语: Globe,
-  物理: FlaskConical,
-  编程: Code,
-  化学: FlaskConical,
+  '人工智能概述': BookOpen,
+  '搜索与推理': Search,
+  '机器学习': Code,
+  '深度学习': Cpu,
+  '自然语言处理': Globe,
+  '计算机视觉': Aperture,
+  '人工智能伦理': Shield,
   default: Code
 }
 
@@ -271,10 +273,13 @@ const yAxisLabels = computed(() => {
 })
 
 const contentDistribution = ref([
-  { name: '数学', percent: 0, color: '#3b82f6', hours: 0 },
-  { name: '编程', percent: 0, color: '#10b981', hours: 0 },
-  { name: '英语', percent: 0, color: '#f59e0b', hours: 0 },
-  { name: '物理', percent: 0, color: '#ef4444', hours: 0 }
+  { name: '人工智能概述', percent: 0, color: '#3b82f6', hours: 0 },
+  { name: '搜索与推理', percent: 0, color: '#f59e0b', hours: 0 },
+  { name: '机器学习', percent: 0, color: '#10b981', hours: 0 },
+  { name: '深度学习', percent: 0, color: '#ef4444', hours: 0 },
+  { name: '自然语言处理', percent: 0, color: '#8b5cf6', hours: 0 },
+  { name: '计算机视觉', percent: 0, color: '#06b6d4', hours: 0 },
+  { name: '人工智能伦理', percent: 0, color: '#ec4899', hours: 0 }
 ])
 
 const pieSegments = computed(() => {
@@ -329,12 +334,13 @@ const getDateRange = (range: string) => {
 }
 
 const subjectColorMap: Record<string, string> = {
-  '数学': '#3b82f6',
-  '物理': '#10b981',
-  '化学': '#ef4444',
-  '英语': '#f59e0b',
-  '编程': '#8b5cf6',
-  '生物': '#06b6d4'
+  '人工智能概述': '#3b82f6',
+  '搜索与推理': '#f59e0b',
+  '机器学习': '#10b981',
+  '深度学习': '#ef4444',
+  '自然语言处理': '#8b5cf6',
+  '计算机视觉': '#06b6d4',
+  '人工智能伦理': '#ec4899'
 }
 
 // 从后端加载学习记录
@@ -418,19 +424,23 @@ const loadRecords = async () => {
 
     // 更新学习历史
     learningHistory.value = timeline.slice(0, 8).map((activity: any) => {
-      // 根据活动标题或类型推断学科
+      // 根据活动标题或类型推断章节
       let category = '其他'
       const title = (activity.title || '').toLowerCase()
-      if (title.includes('python') || title.includes('编程') || title.includes('排序') || title.includes('函数')) {
-        category = '编程'
-      } else if (title.includes('数学') || title.includes('函数') || title.includes('方程') || title.includes('几何')) {
-        category = '数学'
-      } else if (title.includes('英语') || title.includes('语法') || title.includes('阅读')) {
-        category = '英语'
-      } else if (title.includes('物理') || title.includes('力学') || title.includes('电场')) {
-        category = '物理'
-      } else if (title.includes('化学') || title.includes('方程') || title.includes('物质')) {
-        category = '化学'
+      if (title.includes('人工智能概述') || title.includes('图灵') || title.includes('智能体') || title.includes('应用领域')) {
+        category = '人工智能概述'
+      } else if (title.includes('搜索') || title.includes('推理') || title.includes('a*') || title.includes('知识表示')) {
+        category = '搜索与推理'
+      } else if (title.includes('机器学习') || title.includes('监督') || title.includes('无监督') || title.includes('聚类') || title.includes('回归')) {
+        category = '机器学习'
+      } else if (title.includes('深度学习') || title.includes('神经网络') || title.includes('cnn') || title.includes('rnn')) {
+        category = '深度学习'
+      } else if (title.includes('自然语言') || title.includes('nlp') || title.includes('transformer') || title.includes('翻译') || title.includes('文本')) {
+        category = '自然语言处理'
+      } else if (title.includes('计算机视觉') || title.includes('图像') || title.includes('目标检测') || title.includes('人脸识别')) {
+        category = '计算机视觉'
+      } else if (title.includes('伦理') || title.includes('隐私') || title.includes('公平') || title.includes('安全')) {
+        category = '人工智能伦理'
       }
 
       return {
@@ -642,11 +652,6 @@ watch(selectedRange, () => {
 }
 
 .chart-card {
-  background: linear-gradient(145deg, rgba(40, 54, 71, 0.95), rgba(26, 37, 52, 0.98));
-  border: 2px solid rgba(71, 85, 105, 0.7);
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .chart-header {

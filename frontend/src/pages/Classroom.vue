@@ -167,27 +167,27 @@ const icons = {
 const liveClasses = ref([
   {
     id: 1,
-    title: '高三数学冲刺班 - 函数与导数',
-    subject: '数学',
-    teacher: '王老师',
+    title: '人工智能导论 - 机器学习基础直播',
+    subject: '机器学习',
+    teacher: '王教授',
     students: 156,
-    color: 'linear-gradient(135deg, #3b82f6, #2563eb)'
-  },
-  {
-    id: 2,
-    title: '英语口语强化训练 - 日常对话',
-    subject: '英语',
-    teacher: '李老师',
-    students: 89,
     color: 'linear-gradient(135deg, #10b981, #059669)'
   },
   {
+    id: 2,
+    title: '人工智能导论 - 深度学习专题研讨',
+    subject: '深度学习',
+    teacher: '李教授',
+    students: 89,
+    color: 'linear-gradient(135deg, #ef4444, #dc2626)'
+  },
+  {
     id: 3,
-    title: '物理实验专题 - 力学综合',
-    subject: '物理',
-    teacher: '张老师',
+    title: '人工智能导论 - 自然语言处理实践',
+    subject: '自然语言处理',
+    teacher: '张教授',
     students: 124,
-    color: 'linear-gradient(135deg, #f59e0b, #d97706)'
+    color: 'linear-gradient(135deg, #8b5cf6, #7c3aed)'
   }
 ])
 
@@ -195,43 +195,43 @@ const liveClasses = ref([
 const upcomingClasses = ref([
   {
     id: 1,
-    title: '化学有机合成专题',
-    subject: '化学',
-    teacher: '刘老师',
+    title: '人工智能导论 - 搜索与推理算法',
+    subject: '搜索与推理',
+    teacher: '刘教授',
     day: '12',
     month: '7月',
     time: '14:00 - 16:00',
-    color: 'linear-gradient(135deg, #ef4444, #dc2626)'
+    color: 'linear-gradient(135deg, #f59e0b, #d97706)'
   },
   {
     id: 2,
-    title: '数学概率统计精讲',
-    subject: '数学',
-    teacher: '陈老师',
+    title: '人工智能导论 - 计算机视觉入门',
+    subject: '计算机视觉',
+    teacher: '陈教授',
     day: '13',
     month: '7月',
     time: '09:00 - 11:00',
-    color: 'linear-gradient(135deg, #8b5cf6, #7c3aed)'
-  },
-  {
-    id: 3,
-    title: '英语阅读理解技巧',
-    subject: '英语',
-    teacher: '赵老师',
-    day: '14',
-    month: '7月',
-    time: '15:30 - 17:30',
     color: 'linear-gradient(135deg, #06b6d4, #0891b2)'
   },
   {
+    id: 3,
+    title: '人工智能导论 - 人工智能伦理讨论',
+    subject: '人工智能伦理',
+    teacher: '赵教授',
+    day: '14',
+    month: '7月',
+    time: '15:30 - 17:30',
+    color: 'linear-gradient(135deg, #ec4899, #db2777)'
+  },
+  {
     id: 4,
-    title: '物理电磁学进阶',
-    subject: '物理',
-    teacher: '孙老师',
+    title: '人工智能导论 - 人工智能概述导学',
+    subject: '人工智能概述',
+    teacher: '孙教授',
     day: '15',
     month: '7月',
     time: '10:00 - 12:00',
-    color: 'linear-gradient(135deg, #f97316, #ea580c)'
+    color: 'linear-gradient(135deg, #3b82f6, #2563eb)'
   }
 ])
 
@@ -239,41 +239,41 @@ const upcomingClasses = ref([
 const myCourses = ref([
   {
     id: 1,
-    title: '高中数学系统复习',
-    teacher: '王老师',
-    progress: 75,
-    completedLessons: 30,
-    totalLessons: 40,
-    hours: 24,
+    title: '人工智能导论 - 人工智能概述',
+    teacher: '孙教授',
+    progress: 80,
+    completedLessons: 4,
+    totalLessons: 5,
+    hours: 6,
     color: 'linear-gradient(135deg, #3b82f6, #2563eb)'
   },
   {
     id: 2,
-    title: '英语能力提升计划',
-    teacher: '李老师',
+    title: '人工智能导论 - 搜索与推理',
+    teacher: '刘教授',
     progress: 60,
-    completedLessons: 18,
-    totalLessons: 30,
-    hours: 16,
-    color: 'linear-gradient(135deg, #10b981, #059669)'
-  },
-  {
-    id: 3,
-    title: '物理核心概念精讲',
-    teacher: '张老师',
-    progress: 45,
-    completedLessons: 9,
-    totalLessons: 20,
-    hours: 12,
+    completedLessons: 3,
+    totalLessons: 5,
+    hours: 8,
     color: 'linear-gradient(135deg, #f59e0b, #d97706)'
   },
   {
+    id: 3,
+    title: '人工智能导论 - 机器学习',
+    teacher: '王教授',
+    progress: 40,
+    completedLessons: 2,
+    totalLessons: 5,
+    hours: 10,
+    color: 'linear-gradient(135deg, #10b981, #059669)'
+  },
+  {
     id: 4,
-    title: '化学基础与实验',
-    teacher: '刘老师',
-    progress: 30,
-    completedLessons: 6,
-    totalLessons: 20,
+    title: '人工智能导论 - 深度学习',
+    teacher: '李教授',
+    progress: 20,
+    completedLessons: 1,
+    totalLessons: 5,
     hours: 8,
     color: 'linear-gradient(135deg, #ef4444, #dc2626)'
   }

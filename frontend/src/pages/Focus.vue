@@ -82,9 +82,9 @@
             </div>
 
             <div class="subject-select-wrapper">
-              <label>学习科目</label>
+              <label>学习章节</label>
               <select v-model="focusSubject">
-                <option value="">选择科目</option>
+                <option value="">选择章节</option>
                 <option v-for="s in subjects" :key="s" :value="s">{{ s }}</option>
               </select>
             </div>
@@ -232,7 +232,7 @@ function applyCustomTime() {
   remainingSeconds.value = customMinutes.value * 60
 }
 
-const subjects = ['数学', '物理', '化学', '生物', '英语', '语文', '历史', '地理', '政治', '编程']
+const subjects = ['人工智能概述', '搜索与推理', '机器学习', '深度学习', '自然语言处理', '计算机视觉', '人工智能伦理']
 const circumference = 2 * Math.PI * 90
 
 const dashOffset = computed(() => {
@@ -403,11 +403,11 @@ interface HistoryItem {
 }
 
 const history = ref<HistoryItem[]>([
-  { subject: '数学', date: '今天 14:30', minutes: 25 },
-  { subject: '英语', date: '今天 10:15', minutes: 20 },
-  { subject: '物理', date: '昨天 16:00', minutes: 45 },
-  { subject: '编程', date: '昨天 09:30', minutes: 30 },
-  { subject: '化学', date: '2天前 15:00', minutes: 25 }
+  { subject: '机器学习', date: '今天 14:30', minutes: 25 },
+  { subject: '人工智能概述', date: '今天 10:15', minutes: 20 },
+  { subject: '搜索与推理', date: '昨天 16:00', minutes: 45 },
+  { subject: '深度学习', date: '昨天 09:30', minutes: 30 },
+  { subject: '自然语言处理', date: '2天前 15:00', minutes: 25 }
 ])
 
 function recordSession(minutes: number) {
@@ -425,9 +425,13 @@ function recordSession(minutes: number) {
 
 function getSubjectColor(subject: string): string {
   const map: Record<string, string> = {
-    '数学': '#6366f1', '物理': '#f59e0b', '化学': '#ef4444', '生物': '#06b6d4',
-    '英语': '#10b981', '语文': '#ec4899', '历史': '#8b5cf6', '地理': '#14b8a6',
-    '政治': '#f97316', '编程': '#3b82f6'
+    '人工智能概述': '#3b82f6',
+    '搜索与推理': '#f59e0b',
+    '机器学习': '#10b981',
+    '深度学习': '#ef4444',
+    '自然语言处理': '#8b5cf6',
+    '计算机视觉': '#06b6d4',
+    '人工智能伦理': '#ec4899'
   }
   return map[subject] || '#64748b'
 }
