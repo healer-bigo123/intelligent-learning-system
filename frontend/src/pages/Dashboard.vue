@@ -2,7 +2,7 @@
   <div class="dashboard">
     <!-- 统计卡片 -->
     <div class="stats-grid">
-      <div class="stat-card">
+      <div class="stat-card card">
         <div class="stat-icon blue">
           <component :is="icons.BookOpen" class="icon" />
         </div>
@@ -12,7 +12,7 @@
         </div>
       </div>
 
-      <div class="stat-card">
+      <div class="stat-card card">
         <div class="stat-icon green">
           <component :is="icons.Clock" class="icon" />
         </div>
@@ -22,7 +22,7 @@
         </div>
       </div>
 
-      <div class="stat-card">
+      <div class="stat-card card">
         <div class="stat-icon purple">
           <component :is="icons.Award" class="icon" />
         </div>
@@ -32,7 +32,7 @@
         </div>
       </div>
 
-      <div class="stat-card">
+      <div class="stat-card card">
         <div class="stat-icon orange">
           <component :is="icons.TrendingUp" class="icon" />
         </div>
@@ -113,11 +113,13 @@
             @keyup.enter="addTask"
           />
           <select v-model="newTaskSubject" class="task-select subject-select">
-            <option value="数学">数学</option>
-            <option value="英语">英语</option>
-            <option value="物理">物理</option>
-            <option value="化学">化学</option>
-            <option value="综合">综合</option>
+            <option value="人工智能概述">人工智能概述</option>
+            <option value="搜索与推理">搜索与推理</option>
+            <option value="机器学习">机器学习</option>
+            <option value="深度学习">深度学习</option>
+            <option value="自然语言处理">自然语言处理</option>
+            <option value="计算机视觉">计算机视觉</option>
+            <option value="人工智能伦理">人工智能伦理</option>
           </select>
           <select v-model="newTaskPriority" class="task-select priority-select">
             <option value="high">紧急</option>
@@ -255,29 +257,44 @@ import { ref, computed, watch, type Component, onMounted, onUnmounted } from 'vu
 import {
   BookOpen, Clock, Award, TrendingUp, ListChecks, Target,
   Star, History, Check, Play, Calculator, MessageSquare,
-  FlaskConical, Globe, Plus, Trash2, PieChart
+  FlaskConical, Globe, Plus, Trash2, PieChart,
+  Search, Code, Cpu, Shield, Aperture
 } from 'lucide-vue-next'
 import { api } from '@/api/client'
 
 const icons = {
   BookOpen, Clock, Award, TrendingUp, ListChecks, Target,
   Star, History, Check, Play, Calculator, MessageSquare,
-  FlaskConical, Globe, Plus, Trash2, PieChart
+  FlaskConical, Globe, Plus, Trash2, PieChart,
+  Search, Code, Cpu, Shield, Aperture
 }
 
 const courseIconMap: Record<string, Component> = {
-  math: Calculator,
-  english: Globe,
-  physics: FlaskConical,
-  chemistry: FlaskConical,
-  programming: Code,
+  overview: BookOpen,
+  search: Search,
+  ml: Code,
+  dl: Cpu,
+  nlp: Globe,
+  cv: Aperture,
+  ethics: Shield,
   default: BookOpen
 }
 
-import { Code } from 'lucide-vue-next'
-
 const getCourseIcon = (category: string): Component => {
   return courseIconMap[category] || courseIconMap.default
+}
+
+const getSubjectCategory = (subject: string): string => {
+  const map: Record<string, string> = {
+    '人工智能概述': 'overview',
+    '搜索与推理': 'search',
+    '机器学习': 'ml',
+    '深度学习': 'dl',
+    '自然语言处理': 'nlp',
+    '计算机视觉': 'cv',
+    '人工智能伦理': 'ethics'
+  }
+  return map[subject] || 'default'
 }
 
 const stats = ref({
@@ -370,7 +387,7 @@ const stopDrag = () => {
 }
 
 const newTaskTitle = ref('')
-const newTaskSubject = ref('数学')
+const newTaskSubject = ref('人工智能概述')
 const newTaskPriority = ref('medium')
 
 const addTask = async () => {
@@ -410,10 +427,13 @@ const addTask = async () => {
 }
 
 const progressItems = ref([
-  { name: '数学', percent: 0, color: '#3b82f6' },
-  { name: '英语', percent: 0, color: '#10b981' },
-  { name: '物理', percent: 0, color: '#f59e0b' },
-  { name: '化学', percent: 0, color: '#ef4444' }
+  { name: '人工智能概述', percent: 0, color: '#3b82f6' },
+  { name: '搜索与推理', percent: 0, color: '#f59e0b' },
+  { name: '机器学习', percent: 0, color: '#10b981' },
+  { name: '深度学习', percent: 0, color: '#ef4444' },
+  { name: '自然语言处理', percent: 0, color: '#8b5cf6' },
+  { name: '计算机视觉', percent: 0, color: '#06b6d4' },
+  { name: '人工智能伦理', percent: 0, color: '#ec4899' }
 ])
 
 const recommendedCourses = ref<any[]>([])
@@ -431,12 +451,13 @@ const timeRanges = [
 const selectedRange = ref('week')
 
 const subjectColorMap: Record<string, string> = {
-  '数学': '#3b82f6',
-  '英语': '#f59e0b',
-  '物理': '#10b981',
-  '化学': '#ef4444',
-  '编程': '#8b5cf6',
-  '生物': '#06b6d4'
+  '人工智能概述': '#3b82f6',
+  '搜索与推理': '#f59e0b',
+  '机器学习': '#10b981',
+  '深度学习': '#ef4444',
+  '自然语言处理': '#8b5cf6',
+  '计算机视觉': '#06b6d4',
+  '人工智能伦理': '#ec4899'
 }
 
 const fallbackColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
@@ -480,11 +501,13 @@ const getDateRange = (range: string) => {
 
 const inferSubject = (title: string): string => {
   const t = (title || '').toLowerCase()
-  if (t.includes('python') || t.includes('编程') || t.includes('排序') || t.includes('程序') || t.includes('代码')) return '编程'
-  if (t.includes('数学') || t.includes('函数') || t.includes('方程') || t.includes('几何') || t.includes('三角') || t.includes('代数')) return '数学'
-  if (t.includes('英语') || t.includes('语法') || t.includes('阅读') || t.includes('词汇')) return '英语'
-  if (t.includes('物理') || t.includes('力学') || t.includes('电场') || t.includes('运动') || t.includes('光学')) return '物理'
-  if (t.includes('化学') || t.includes('物质') || t.includes('反应') || t.includes('元素')) return '化学'
+  if (t.includes('搜索') || t.includes('推理') || t.includes('博弈') || t.includes('a*') || t.includes('约束')) return '搜索与推理'
+  if (t.includes('机器') || t.includes('回归') || t.includes('分类') || t.includes('聚类') || t.includes('svm')) return '机器学习'
+  if (t.includes('深度') || t.includes('神经') || t.includes('cnn') || t.includes('rnn') || t.includes('transformer')) return '深度学习'
+  if (t.includes('nlp') || t.includes('语言') || t.includes('文本') || t.includes('词向量') || t.includes('bert')) return '自然语言处理'
+  if (t.includes('视觉') || t.includes('图像') || t.includes('cv') || t.includes('cnn')) return '计算机视觉'
+  if (t.includes('伦理') || t.includes('道德') || t.includes('公平') || t.includes('隐私')) return '人工智能伦理'
+  if (t.includes('智能') || t.includes('ai') || t.includes('历史') || t.includes('发展') || t.includes('定义')) return '人工智能概述'
   return '其他'
 }
 
@@ -576,7 +599,7 @@ const loadDashboardData = async () => {
       title: r.title,
       instructor: r.generated_by || '系统推荐',
       duration: `${r.duration || 30}分钟`,
-      category: r.subject === '数学' ? 'math' : r.subject === '英语' ? 'english' : r.subject === '物理' ? 'physics' : r.subject === '化学' ? 'chemistry' : 'default',
+      category: getSubjectCategory(r.subject),
       color: colorList[index % colorList.length],
       tags: r.tags || [r.subject, r.type || '课程']
     }))
@@ -590,20 +613,23 @@ const loadDashboardData = async () => {
       time: new Date(a.created_at).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
     }))
 
-    // 更新学习进度（从学科成绩趋势）
-    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
+    // 更新学习进度（章节掌握度）
+    const colors = ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899']
     if (subjectItems.length > 0) {
-      progressItems.value = subjectItems.slice(0, 4).map((item: any, index: number) => ({
+      progressItems.value = subjectItems.slice(0, 7).map((item: any, index: number) => ({
         name: item.subject,
         percent: Math.round(item.accuracy_rate || 0),
         color: colors[index % colors.length]
       }))
     } else {
       progressItems.value = [
-        { name: '数学', percent: 0, color: '#3b82f6' },
-        { name: '英语', percent: 0, color: '#10b981' },
-        { name: '物理', percent: 0, color: '#f59e0b' },
-        { name: '化学', percent: 0, color: '#ef4444' }
+        { name: '人工智能概述', percent: 0, color: '#3b82f6' },
+        { name: '搜索与推理', percent: 0, color: '#f59e0b' },
+        { name: '机器学习', percent: 0, color: '#10b981' },
+        { name: '深度学习', percent: 0, color: '#ef4444' },
+        { name: '自然语言处理', percent: 0, color: '#8b5cf6' },
+        { name: '计算机视觉', percent: 0, color: '#06b6d4' },
+        { name: '人工智能伦理', percent: 0, color: '#ec4899' }
       ]
     }
   } catch (error) {
@@ -662,36 +688,40 @@ onUnmounted(() => {
 }
 
 .stat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-sm);
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 
-  &.blue { background: rgba(59, 130, 246, 0.1); .icon { color: rgba(59, 130, 246, 0.8); } }
-  &.green { background: rgba(16, 185, 129, 0.1); .icon { color: rgba(16, 185, 129, 0.8); } }
-  &.purple { background: rgba(139, 92, 246, 0.1); .icon { color: rgba(139, 92, 246, 0.8); } }
-  &.orange { background: rgba(245, 158, 11, 0.1); .icon { color: rgba(245, 158, 11, 0.8); } }
+  &.blue { background: linear-gradient(145deg, rgba(99, 102, 241, 0.2), rgba(79, 70, 229, 0.1)); .icon { color: #818cf8; } }
+  &.green { background: linear-gradient(145deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1)); .icon { color: #34d399; } }
+  &.purple { background: linear-gradient(145deg, rgba(139, 92, 246, 0.2), rgba(126, 34, 206, 0.1)); .icon { color: #c084fc; } }
+  &.orange { background: linear-gradient(145deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.1)); .icon { color: #fbbf24; } }
 
   .icon {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
   }
 }
 
 .stat-info {
   .stat-value {
-    font-size: 24px;
-    font-weight: 600;
-    color: rgba(241, 245, 249, 0.9);
+    font-size: 28px;
+    font-weight: 800;
+    color: #ffffff;
     margin: 0;
+    line-height: 1.2;
   }
 
   .stat-label {
     font-size: 12px;
-    color: rgba(148, 163, 184, 0.7);
+    color: #94a3b8;
     margin-top: 4px;
+    font-weight: 500;
   }
 }
 
@@ -702,11 +732,12 @@ onUnmounted(() => {
 }
 
 .section-card {
-  background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-  border: 1px solid rgba(71, 85, 105, 0.4);
-  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, rgba(40, 54, 71, 0.95), rgba(26, 37, 52, 0.98));
+  border: 2px solid rgba(71, 85, 105, 0.7);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   min-height: auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .section-header {

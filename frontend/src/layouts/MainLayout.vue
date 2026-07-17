@@ -466,6 +466,7 @@ const currentPageDesc = computed(() => pageTitles[route.path]?.desc || '')
   border-radius: var(--radius-md);
   cursor: pointer;
   height: 42px;
+<<<<<<< HEAD
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -474,6 +475,17 @@ const currentPageDesc = computed(() => pageTitles[route.path]?.desc || '')
     background: linear-gradient(145deg, #334155, #273548);
     border-color: #60a5fa;
     box-shadow:
+=======
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: linear-gradient(145deg, #334155, #273548);
+    border-color: #60a5fa;
+    box-shadow: 
+>>>>>>> f65871e10d6e3e64014cb6e7dbdb0abd9dfbe980
       0 2px 8px rgba(0, 0, 0, 0.15),
       0 0 0 1px #60a5fa;
   }
@@ -486,6 +498,7 @@ const currentPageDesc = computed(() => pageTitles[route.path]?.desc || '')
     align-items: center;
     justify-content: center;
     box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+
     .avatar-icon {
       width: 18px;
       height: 18px;

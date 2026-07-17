@@ -107,7 +107,8 @@
 import { ref, computed, onMounted } from 'vue'
 import {
   Star, Flame, BookOpen, Target, Clock,
-  Award, Lock, Zap, Heart, Share2, Users
+  Award, Lock, Zap, Heart, Share2, Users,
+  Lightbulb, Cpu, Shield, Aperture, Search, Code, Globe
 } from 'lucide-vue-next'
 import type { Component } from 'vue'
 import { getAchievements, getMyAchievements, checkAchievements, type AchievementItem } from '@/api/achievements'
@@ -564,6 +565,41 @@ onMounted(() => {
     background: rgba(251, 191, 36, 0.12);
     .card-icon { color: rgba(251, 191, 36, 0.85); }
   }
+
+  &.icon-lightbulb {
+    background: rgba(99, 102, 241, 0.12);
+    .card-icon { color: rgba(99, 102, 241, 0.85); }
+  }
+
+  &.icon-search {
+    background: rgba(245, 158, 11, 0.12);
+    .card-icon { color: rgba(245, 158, 11, 0.85); }
+  }
+
+  &.icon-code {
+    background: rgba(16, 185, 129, 0.12);
+    .card-icon { color: rgba(16, 185, 129, 0.85); }
+  }
+
+  &.icon-cpu {
+    background: rgba(239, 68, 68, 0.12);
+    .card-icon { color: rgba(239, 68, 68, 0.85); }
+  }
+
+  &.icon-globe {
+    background: rgba(139, 92, 246, 0.12);
+    .card-icon { color: rgba(139, 92, 246, 0.85); }
+  }
+
+  &.icon-aperture {
+    background: rgba(6, 182, 212, 0.12);
+    .card-icon { color: rgba(6, 182, 212, 0.85); }
+  }
+
+  &.icon-shield {
+    background: rgba(236, 72, 153, 0.12);
+    .card-icon { color: rgba(236, 72, 153, 0.85); }
+  }
 }
 
 .unlocked .card-icon-wrapper {
@@ -576,6 +612,13 @@ onMounted(() => {
   &.icon-share { background: rgba(99, 102, 241, 0.18); }
   &.icon-users { background: rgba(244, 114, 182, 0.18); }
   &.icon-star { background: rgba(251, 191, 36, 0.18); }
+  &.icon-lightbulb { background: rgba(99, 102, 241, 0.18); }
+  &.icon-search { background: rgba(245, 158, 11, 0.18); }
+  &.icon-code { background: rgba(16, 185, 129, 0.18); }
+  &.icon-cpu { background: rgba(239, 68, 68, 0.18); }
+  &.icon-globe { background: rgba(139, 92, 246, 0.18); }
+  &.icon-aperture { background: rgba(6, 182, 212, 0.18); }
+  &.icon-shield { background: rgba(236, 72, 153, 0.18); }
 }
 
 .card-body {

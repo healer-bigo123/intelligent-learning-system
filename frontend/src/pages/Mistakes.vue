@@ -68,7 +68,7 @@
     <div class="filter-bar">
       <div class="filter-left">
         <select v-model="filterSubject" class="filter-select" @change="loadMistakes">
-          <option value="">全部学科</option>
+          <option value="">全部章节</option>
           <option v-for="s in subjectOptions" :key="s" :value="s">{{ s }}</option>
         </select>
         <select v-model="filterStatus" class="filter-select" @change="loadMistakes">
@@ -113,7 +113,7 @@
         <div
           v-for="mistake in mistakes"
           :key="mistake.id"
-          class="mistake-card"
+          class="mistake-card card"
           :class="mistake.status"
         >
           <div class="mistake-header">
@@ -199,8 +199,8 @@
             </div>
             <div class="modal-body">
               <div class="form-group">
-                <label>学科</label>
-                <input v-model="formData.subject" type="text" placeholder="如：数学、英语" />
+                <label>章节</label>
+                <input v-model="formData.subject" type="text" placeholder="如：机器学习、深度学习" />
               </div>
               <div class="form-group">
                 <label>题目内容</label>
@@ -285,7 +285,7 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 const subjectOptions = computed(() => {
   const fromStats = Object.keys(stats.value.by_subject)
-  const allSubjects = ['数学', '物理', '化学', '生物', '英语', '语文', '历史', '地理', '政治', '编程']
+  const allSubjects = ['人工智能概述', '搜索与推理', '机器学习', '深度学习', '自然语言处理', '计算机视觉', '人工智能伦理']
   const merged = [...new Set([...allSubjects, ...fromStats])]
   return merged
 })
@@ -354,11 +354,13 @@ const getSubjectPercent = (count: number): number => {
 
 const getSubjectClass = (subject: string): string => {
   const classMap: Record<string, string> = {
-    '数学': 'math',
-    '英语': 'english',
-    '物理': 'physics',
-    '化学': 'chemistry',
-    '编程': 'programming'
+    '人工智能概述': 'overview',
+    '搜索与推理': 'search',
+    '机器学习': 'ml',
+    '深度学习': 'dl',
+    '自然语言处理': 'nlp',
+    '计算机视觉': 'cv',
+    '人工智能伦理': 'ethics'
   }
   return classMap[subject] || 'default'
 }
@@ -593,6 +595,7 @@ onMounted(() => {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+  margin-bottom: 20px;
 }
 
 .filter-left {
@@ -603,20 +606,24 @@ onMounted(() => {
 
 .filter-select {
   padding: 8px 12px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
+  background: linear-gradient(145deg, #273548, #1e293b);
+  border: 2px solid rgba(71, 85, 105, 0.8);
+  border-radius: var(--radius-md);
+  color: #e2e8f0;
   font-size: 13px;
   cursor: pointer;
+  height: 40px;
+  min-width: 120px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   &:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: #6366f1;
   }
 
   option {
-    background: var(--bg-secondary);
+    background: #1e293b;
+    color: #e2e8f0;
   }
 }
 
@@ -625,21 +632,31 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  background: linear-gradient(145deg, #273548, #1e293b);
+  border: 2px solid rgba(71, 85, 105, 0.8);
+  border-radius: var(--radius-md);
+  height: 40px;
+  min-width: 180px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
 
-  .search-icon { width: 14px; height: 14px; color: var(--text-muted); }
+  &:hover,
+  &:focus-within {
+    border-color: #60a5fa;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), 0 0 0 1px #60a5fa;
+  }
+
+  .search-icon { width: 15px; height: 15px; color: #94a3b8; }
 
   .search-input {
     background: transparent;
     border: none;
     outline: none;
-    color: var(--text-primary);
+    color: #e2e8f0;
     font-size: 13px;
     width: 160px;
 
-    &::placeholder { color: var(--text-muted); }
+    &::placeholder { color: #64748b; }
   }
 }
 
@@ -712,19 +729,9 @@ onMounted(() => {
 }
 
 .mistake-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: rgba(99, 102, 241, 0.4);
-    transform: translateY(-2px);
-  }
 
   &.mastered { opacity: 0.7; }
 }
@@ -741,11 +748,13 @@ onMounted(() => {
   font-size: 11px;
   font-weight: 500;
 
-  &.math { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-  &.english { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-  &.physics { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-  &.chemistry { background: rgba(239, 68, 68, 0.15); color: #f87171; }
-  &.programming { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+  &.overview { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+  &.search { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+  &.ml { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+  &.dl { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+  &.nlp { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+  &.cv { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
+  &.ethics { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
   &.default { background: rgba(99, 102, 241, 0.15); color: var(--primary-color); }
 }
 

@@ -450,20 +450,21 @@ onMounted(() => {
   align-items: flex-start;
   gap: 14px;
   padding: 16px 18px;
-  background: var(--bg-card, #16213e);
-  border: 1px solid var(--border-color, #374151);
-  border-radius: var(--radius-md, 12px);
+  background: linear-gradient(145deg, rgba(40, 54, 71, 0.95), rgba(26, 37, 52, 0.98));
+  border: 2px solid rgba(71, 85, 105, 0.7);
+  border-radius: var(--radius-lg, 12px);
   cursor: pointer;
   transition: all 0.25s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   &:hover {
-    border-color: rgba(99, 102, 241, 0.4);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
     transform: translateY(-1px);
   }
 
   &.unread {
-    background: linear-gradient(145deg, rgba(59, 130, 246, 0.06), rgba(22, 33, 62, 0.95));
+    background: linear-gradient(145deg, rgba(59, 130, 246, 0.1), rgba(40, 54, 71, 0.98));
     border-color: rgba(59, 130, 246, 0.25);
   }
 }
