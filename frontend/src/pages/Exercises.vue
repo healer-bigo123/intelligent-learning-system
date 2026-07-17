@@ -59,14 +59,8 @@
       <div class="filter-bar">
         <div class="filter-left">
           <select v-model="filterSubject" class="filter-select" @change="loadExercises">
-            <option value="">全部章节</option>
-            <option value="人工智能概述">人工智能概述</option>
-            <option value="搜索与推理">搜索与推理</option>
-            <option value="机器学习">机器学习</option>
-            <option value="深度学习">深度学习</option>
-            <option value="自然语言处理">自然语言处理</option>
-            <option value="计算机视觉">计算机视觉</option>
-            <option value="人工智能伦理">人工智能伦理</option>
+            <option value="">全部学科</option>
+            <option v-for="subject in subjectOptions" :key="subject" :value="subject">{{ subject }}</option>
           </select>
           <select v-model="filterType" class="filter-select" @change="loadExercises">
             <option value="">全部题型</option>
@@ -75,6 +69,15 @@
             <option value="short_answer">简答题</option>
             <option value="programming">编程题</option>
           </select>
+          <button
+            class="filter-btn"
+            :class="{ active: showFavoritesOnly }"
+            @click="toggleFavoriteFilter"
+            title="只看收藏"
+          >
+            <component :is="icons.Heart" class="btn-icon" />
+            {{ showFavoritesOnly ? '显示全部' : '只看收藏' }}
+          </button>
         </div>
         <div class="filter-right">
           <button class="btn-primary" @click="showStartSession = true">
@@ -89,14 +92,14 @@
         <span>加载中...</span>
       </div>
 
-      <div v-else-if="exercises.length === 0" class="empty-state">
+      <div v-else-if="displayedExercises.length === 0" class="empty-state">
         <component :is="icons.BookOpen" class="empty-icon" />
-        <p>暂无练习题</p>
+        <p>{{ showFavoritesOnly ? '暂无收藏的练习题' : '暂无练习题' }}</p>
       </div>
 
       <div v-else class="exercise-list">
         <div
-          v-for="exercise in exercises"
+          v-for="exercise in displayedExercises"
           :key="exercise.id"
           class="exercise-card card"
         >
@@ -246,16 +249,10 @@
             </div>
             <div class="modal-body">
               <div class="form-group">
-                <label>选择章节</label>
+                <label>选择学科</label>
                 <select v-model="sessionForm.subject">
                   <option value="">请选择</option>
-                  <option value="人工智能概述">人工智能概述</option>
-                  <option value="搜索与推理">搜索与推理</option>
-                  <option value="机器学习">机器学习</option>
-                  <option value="深度学习">深度学习</option>
-                  <option value="自然语言处理">自然语言处理</option>
-                  <option value="计算机视觉">计算机视觉</option>
-                  <option value="人工智能伦理">人工智能伦理</option>
+                  <option v-for="subject in subjectOptions" :key="subject" :value="subject">{{ subject }}</option>
                 </select>
               </div>
               <div class="form-group">
@@ -429,7 +426,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import {
   BookOpen, CheckCircle, Target, Zap, History, List,
   Play, X, Heart, ChevronRight, ChevronLeft, Flag, Eye
@@ -461,6 +458,29 @@ const exerciseTotal = ref(0)
 const loadingExercises = ref(false)
 const filterSubject = ref('')
 const filterType = ref('')
+const showFavoritesOnly = ref(false)
+
+// 与实际数据保持一致的学科选项
+const defaultSubjects = ['数学', '物理', '化学', '英语', '生物']
+const subjectOptions = computed(() => {
+  const set = new Set(defaultSubjects)
+  exercises.value.forEach(e => set.add(e.subject))
+  return Array.from(set)
+})
+
+// 收藏筛选后的展示列表
+const displayedExercises = computed(() => {
+  if (!showFavoritesOnly.value) return exercises.value
+  return exercises.value.filter(e => exerciseFavorites.value[e.id])
+})
+
+const toggleFavoriteFilter = () => {
+  showFavoritesOnly.value = !showFavoritesOnly.value
+}
+
+watch(showFavoritesOnly, () => {
+  loadExercises()
+})
 
 // 练习历史
 const historyItems = ref<ExerciseHistoryItem[]>([])
@@ -547,7 +567,7 @@ const loadExercises = async () => {
     const res = await getExercises({
       subject: filterSubject.value || undefined,
       type: filterType.value || undefined,
-      page_size: 50
+      page_size: showFavoritesOnly.value ? 100 : 50
     })
     exercises.value = res.items
     exerciseTotal.value = res.total
@@ -854,6 +874,34 @@ onMounted(() => {
 .filter-left {
   display: flex;
   gap: 10px;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: linear-gradient(145deg, #273548, #1e293b);
+  border: 2px solid rgba(71, 85, 105, 0.8);
+  border-radius: var(--radius-md);
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  .btn-icon { width: 14px; height: 14px; }
+
+  &:hover {
+    border-color: #ec4899;
+    color: #ec4899;
+  }
+
+  &.active {
+    background: rgba(236, 72, 153, 0.15);
+    border-color: #ec4899;
+    color: #ec4899;
+  }
 }
 
 .filter-select {

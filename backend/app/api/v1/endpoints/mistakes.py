@@ -155,6 +155,36 @@ async def list_mistakes(
     return {"total": total, "items": items}
 
 
+@router.get("/stats/overview", response_model=MistakeStatsResponse)
+async def get_mistake_stats(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    """
+    错题统计分析
+    """
+    total = db.query(Mistake).filter(Mistake.user_id == user_id).count()
+    unsolved = db.query(Mistake).filter(Mistake.user_id == user_id, Mistake.status == "unsolved").count()
+    reviewing = db.query(Mistake).filter(Mistake.user_id == user_id, Mistake.status == "reviewing").count()
+    mastered = db.query(Mistake).filter(Mistake.user_id == user_id, Mistake.status == "mastered").count()
+
+    # 按学科统计
+    subject_stats = db.query(
+        Mistake.subject,
+        func.count(Mistake.id).label("count")
+    ).filter(Mistake.user_id == user_id).group_by(Mistake.subject).all()
+
+    by_subject = {s.subject: s.count for s in subject_stats}
+
+    return {
+        "total": total,
+        "unsolved": unsolved,
+        "reviewing": reviewing,
+        "mastered": mastered,
+        "by_subject": by_subject
+    }
+
+
 @router.get("/{mistake_id}", response_model=MistakeResponse)
 async def get_mistake(
     mistake_id: str,
@@ -261,34 +291,4 @@ async def review_mistake(
         "message": "复习记录已更新",
         "review_count": mistake.review_count,
         "status": mistake.status
-    }
-
-
-@router.get("/stats/overview", response_model=MistakeStatsResponse)
-async def get_mistake_stats(
-    user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db)
-):
-    """
-    错题统计分析
-    """
-    total = db.query(Mistake).filter(Mistake.user_id == user_id).count()
-    unsolved = db.query(Mistake).filter(Mistake.user_id == user_id, Mistake.status == "unsolved").count()
-    reviewing = db.query(Mistake).filter(Mistake.user_id == user_id, Mistake.status == "reviewing").count()
-    mastered = db.query(Mistake).filter(Mistake.user_id == user_id, Mistake.status == "mastered").count()
-
-    # 按学科统计
-    subject_stats = db.query(
-        Mistake.subject,
-        func.count(Mistake.id).label("count")
-    ).filter(Mistake.user_id == user_id).group_by(Mistake.subject).all()
-
-    by_subject = {s.subject: s.count for s in subject_stats}
-
-    return {
-        "total": total,
-        "unsolved": unsolved,
-        "reviewing": reviewing,
-        "mastered": mastered,
-        "by_subject": by_subject
     }

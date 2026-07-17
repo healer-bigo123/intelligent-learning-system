@@ -68,7 +68,7 @@
     <div class="filter-bar">
       <div class="filter-left">
         <select v-model="filterSubject" class="filter-select" @change="loadMistakes">
-          <option value="">全部章节</option>
+          <option value="">全部学科</option>
           <option v-for="s in subjectOptions" :key="s" :value="s">{{ s }}</option>
         </select>
         <select v-model="filterStatus" class="filter-select" @change="loadMistakes">
@@ -77,6 +77,15 @@
           <option value="reviewing">复习中</option>
           <option value="mastered">已掌握</option>
         </select>
+        <button
+          class="filter-btn"
+          :class="{ active: showFavoritesOnly }"
+          @click="toggleFavoriteFilter"
+          title="只看收藏"
+        >
+          <component :is="icons.Heart" class="btn-icon" />
+          {{ showFavoritesOnly ? '显示全部' : '只看收藏' }}
+        </button>
         <div class="search-input-wrapper">
           <component :is="icons.Search" class="search-icon" />
           <input
@@ -103,15 +112,15 @@
         <span>加载中...</span>
       </div>
 
-      <div v-else-if="mistakes.length === 0" class="empty-state">
+      <div v-else-if="displayedMistakes.length === 0" class="empty-state">
         <component :is="icons.FileText" class="empty-icon" />
-        <p class="empty-text">暂无错题记录</p>
-        <p class="empty-hint">点击"添加错题"开始记录</p>
+        <p class="empty-text">{{ showFavoritesOnly ? '暂无收藏的错题' : '暂无错题记录' }}</p>
+        <p v-if="!showFavoritesOnly" class="empty-hint">点击"添加错题"开始记录</p>
       </div>
 
       <div v-else class="mistakes-grid">
         <div
-          v-for="mistake in mistakes"
+          v-for="mistake in displayedMistakes"
           :key="mistake.id"
           class="mistake-card card"
           :class="mistake.status"
@@ -258,7 +267,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import {
   FileText, AlertCircle, Eye, CheckCircle, BarChart,
   Search, Plus, Edit, Trash2, X, Heart
@@ -296,13 +305,31 @@ const totalPages = computed(() => Math.ceil(total.value / pageSize))
 const filterSubject = ref('')
 const filterStatus = ref('')
 const keyword = ref('')
+const showFavoritesOnly = ref(false)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
+// 与实际数据保持一致的学科选项
+const defaultSubjects = ['数学', '物理', '化学', '英语', '生物']
 const subjectOptions = computed(() => {
-  const fromStats = Object.keys(stats.value.by_subject)
-  const allSubjects = ['人工智能概述', '搜索与推理', '机器学习', '深度学习', '自然语言处理', '计算机视觉', '人工智能伦理']
-  const merged = [...new Set([...allSubjects, ...fromStats])]
-  return merged
+  const set = new Set(defaultSubjects)
+  Object.keys(stats.value.by_subject).forEach(s => set.add(s))
+  mistakes.value.forEach(m => set.add(m.subject))
+  return Array.from(set)
+})
+
+// 收藏筛选后的展示列表
+const displayedMistakes = computed(() => {
+  if (!showFavoritesOnly.value) return mistakes.value
+  return mistakes.value.filter(m => mistakeFavorites.value[m.id])
+})
+
+const toggleFavoriteFilter = () => {
+  showFavoritesOnly.value = !showFavoritesOnly.value
+}
+
+watch(showFavoritesOnly, () => {
+  currentPage.value = 1
+  loadMistakes()
 })
 
 // 收藏状态
@@ -356,7 +383,7 @@ const loadMistakes = async () => {
       status: filterStatus.value || undefined,
       keyword: keyword.value || undefined,
       page: currentPage.value,
-      page_size: pageSize
+      page_size: showFavoritesOnly.value ? 100 : pageSize
     })
     mistakes.value = res.items
     total.value = res.total
@@ -388,6 +415,11 @@ const getSubjectPercent = (count: number): number => {
 
 const getSubjectClass = (subject: string): string => {
   const classMap: Record<string, string> = {
+    '数学': 'math',
+    '物理': 'physics',
+    '化学': 'chemistry',
+    '英语': 'english',
+    '生物': 'biology',
     '人工智能概述': 'overview',
     '搜索与推理': 'search',
     '机器学习': 'ml',
@@ -658,6 +690,34 @@ onMounted(() => {
   gap: 10px;
 }
 
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: linear-gradient(145deg, #273548, #1e293b);
+  border: 2px solid rgba(71, 85, 105, 0.8);
+  border-radius: var(--radius-md);
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  .btn-icon { width: 14px; height: 14px; }
+
+  &:hover {
+    border-color: #ec4899;
+    color: #ec4899;
+  }
+
+  &.active {
+    background: rgba(236, 72, 153, 0.15);
+    border-color: #ec4899;
+    color: #ec4899;
+  }
+}
+
 .filter-select {
   padding: 8px 12px;
   background: linear-gradient(145deg, #273548, #1e293b);
@@ -841,6 +901,11 @@ onMounted(() => {
   font-size: 11px;
   font-weight: 500;
 
+  &.math { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+  &.physics { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+  &.chemistry { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+  &.english { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+  &.biology { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
   &.overview { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
   &.search { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
   &.ml { background: rgba(16, 185, 129, 0.15); color: #34d399; }
