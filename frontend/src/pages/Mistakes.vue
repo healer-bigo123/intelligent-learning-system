@@ -219,8 +219,8 @@
             </div>
             <div class="modal-body">
               <div class="form-group">
-                <label>章节</label>
-                <input v-model="formData.subject" type="text" placeholder="如：机器学习、深度学习" />
+                <label>学科</label>
+                <input v-model="formData.subject" type="text" placeholder="如：数学、物理" />
               </div>
               <div class="form-group">
                 <label>题目内容</label>
