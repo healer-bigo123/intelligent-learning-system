@@ -94,7 +94,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Bell, CheckCircle, BookOpen, Award, FileText, Settings, CheckSquare } from 'lucide-vue-next'
-import { getNotifications, getUnreadCount, markAsRead as markAsReadApi, markAllAsRead as markAllAsReadApi, type NotificationItem } from '@/api/notifications'
+import { getNotifications, getUnreadCount, markAsRead as markAsReadApi, markAllAsRead as markAllAsReadApi } from '@/api/notifications'
 
 const icons = { Bell, CheckCircle, BookOpen, Award, FileText, Settings, CheckSquare }
 

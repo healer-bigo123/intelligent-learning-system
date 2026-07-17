@@ -102,9 +102,20 @@
         >
           <div class="exercise-header">
             <span class="type-tag" :class="exercise.type">{{ getTypeText(exercise.type) }}</span>
-            <span class="difficulty-badge" :class="'d' + exercise.difficulty">
-              {{ '★'.repeat(exercise.difficulty) }}
-            </span>
+            <div class="header-actions">
+              <button
+                class="favorite-btn"
+                :class="{ favorited: exerciseFavorites[exercise.id] }"
+                :disabled="favoriteLoading[exercise.id]"
+                @click.stop="toggleFavorite(exercise.id)"
+                :title="exerciseFavorites[exercise.id] ? '取消收藏' : '收藏'"
+              >
+                <Heart class="btn-icon" :fill="exerciseFavorites[exercise.id] ? 'currentColor' : 'none'" />
+              </button>
+              <span class="difficulty-badge" :class="'d' + exercise.difficulty">
+                {{ '★'.repeat(exercise.difficulty) }}
+              </span>
+            </div>
           </div>
           <div class="exercise-question">{{ exercise.question }}</div>
           <div class="exercise-footer">
@@ -197,8 +208,26 @@
               <span class="stat-val score">{{ session.score }}</span>
             </div>
           </div>
-          <div class="session-time">
-            {{ formatTime(session.created_at) }}
+          <div class="session-actions">
+            <button
+              v-if="session.status !== 'completed'"
+              class="session-btn continue"
+              @click="continueSession(session)"
+              :disabled="loadingSessionDetail"
+            >
+              <component :is="icons.Play" class="btn-icon" />
+              {{ loadingSessionDetail ? '加载中...' : '继续练习' }}
+            </button>
+            <button
+              v-else
+              class="session-btn review"
+              @click="continueSession(session)"
+              :disabled="loadingSessionDetail"
+            >
+              <component :is="icons.Eye" class="btn-icon" />
+              回顾
+            </button>
+            <span class="session-time">{{ formatTime(session.created_at) }}</span>
           </div>
         </div>
       </div>
@@ -255,6 +284,147 @@
         </div>
       </Transition>
     </Teleport>
+
+    <!-- 答题会话面板 -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div class="session-overlay" v-if="currentSession" @click.self="closeSession">
+          <div class="session-panel">
+            <div class="session-panel-header">
+              <div>
+                <h3>{{ currentSession.title || currentSession.subject + ' 练习' }}</h3>
+                <p class="session-progress-text">
+                  第 {{ currentExerciseIndex + 1 }} / {{ currentExercises.length }} 题
+                </p>
+              </div>
+              <button class="modal-close" @click="closeSession">
+                <component :is="icons.X" class="close-icon" />
+              </button>
+            </div>
+
+            <div class="session-panel-body">
+              <div v-if="sessionCompleted && sessionSummary" class="session-summary">
+                <div class="summary-score" :class="sessionSummary.score >= 60 ? 'pass' : 'fail'">
+                  <span class="score-num">{{ sessionSummary.score }}</span>
+                  <span class="score-label">分</span>
+                </div>
+                <div class="summary-stats">
+                  <div class="summary-stat">
+                    <span class="label">总题数</span>
+                    <span class="value">{{ sessionSummary.total }}</span>
+                  </div>
+                  <div class="summary-stat correct">
+                    <span class="label">正确</span>
+                    <span class="value">{{ sessionSummary.correct }}</span>
+                  </div>
+                  <div class="summary-stat wrong">
+                    <span class="label">错误</span>
+                    <span class="value">{{ sessionSummary.wrong }}</span>
+                  </div>
+                </div>
+                <button class="btn-confirm" @click="closeSession">完成</button>
+              </div>
+
+              <div v-else-if="currentExercise" class="question-area">
+                <div class="question-meta">
+                  <span class="type-tag" :class="currentExercise.type">
+                    {{ getTypeText(currentExercise.type) }}
+                  </span>
+                  <span class="difficulty-badge" :class="'d' + currentExercise.difficulty">
+                    {{ '★'.repeat(currentExercise.difficulty) }}
+                  </span>
+                  <span class="kp-label" v-if="currentExercise.knowledge_point">
+                    {{ currentExercise.knowledge_point }}
+                  </span>
+                </div>
+
+                <div class="question-content">{{ currentExercise.question }}</div>
+
+                <div v-if="currentExercise.type === 'choice' && currentExercise.options" class="options-list">
+                  <label
+                    v-for="(option, idx) in currentExercise.options"
+                    :key="idx"
+                    class="option-item"
+                    :class="{
+                      selected: currentAnswer?.user_answer === option,
+                      correct: currentAnswer?.submitted && option === currentAnswer?.correct_answer,
+                      wrong: currentAnswer?.submitted && currentAnswer?.user_answer === option && !currentAnswer?.is_correct
+                    }"
+                  >
+                    <input
+                      type="radio"
+                      :name="currentExercise.id"
+                      :value="option"
+                      v-model="currentAnswer!.user_answer"
+                      :disabled="currentAnswer?.submitted"
+                    />
+                    <span class="option-index">{{ String.fromCharCode(65 + idx) }}.</span>
+                    <span class="option-text">{{ option }}</span>
+                  </label>
+                </div>
+
+                <div v-else class="answer-input-area">
+                  <label>你的答案</label>
+                  <textarea
+                    v-model="currentAnswer!.user_answer"
+                    rows="4"
+                    placeholder="请输入你的答案"
+                    :disabled="currentAnswer?.submitted"
+                  ></textarea>
+                </div>
+
+                <div v-if="currentAnswer?.submitted" class="answer-result" :class="currentAnswer.is_correct ? 'correct' : 'wrong'">
+                  <div class="result-title">
+                    <component :is="currentAnswer.is_correct ? icons.CheckCircle : icons.X" class="result-icon" />
+                    {{ currentAnswer.is_correct ? '回答正确' : '回答错误' }}
+                  </div>
+                  <div class="result-detail">
+                    <p><strong>正确答案：</strong>{{ currentAnswer.correct_answer }}</p>
+                    <p v-if="currentAnswer.explanation"><strong>解析：</strong>{{ currentAnswer.explanation }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="session-panel-footer">
+              <button
+                class="btn-secondary"
+                :disabled="currentExerciseIndex <= 0"
+                @click="currentExerciseIndex--"
+              >
+                <component :is="icons.ChevronLeft" class="btn-icon" />
+                上一题
+              </button>
+
+              <button
+                v-if="!currentAnswer?.submitted"
+                class="btn-confirm"
+                @click="submitCurrentAnswer"
+              >
+                提交答案
+              </button>
+              <button
+                v-else-if="currentExerciseIndex < currentExercises.length - 1"
+                class="btn-confirm"
+                @click="currentExerciseIndex++"
+              >
+                下一题
+                <component :is="icons.ChevronRight" class="btn-icon" />
+              </button>
+              <button
+                v-else
+                class="btn-confirm"
+                @click="finishSession"
+                :disabled="completingSession"
+              >
+                <component :is="icons.Flag" class="btn-icon" />
+                {{ completingSession ? '提交中...' : '完成练习' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -262,15 +432,20 @@
 import { ref, computed, onMounted } from 'vue'
 import {
   BookOpen, CheckCircle, Target, Zap, History, List,
-  Play, X
+  Play, X, Heart, ChevronRight, ChevronLeft, Flag, Eye
 } from 'lucide-vue-next'
 import {
   getExercises, getExerciseHistory, getSessionHistory,
-  generateExerciseSession,
+  generateExerciseSession, getExerciseSession, completeExerciseSession,
+  submitAnswer,
   type ExerciseItem, type ExerciseHistoryItem, type ExerciseSessionItem
 } from '@/api/exercises'
+import {
+  getFavorites, createFavorite, removeFavoriteByTarget,
+  type FavoriteItem
+} from '@/api/favorites'
 
-const icons = { BookOpen, CheckCircle, Target, Zap, History, List, Play, X }
+const icons = { BookOpen, CheckCircle, Target, Zap, History, List, Play, X, Heart, ChevronRight, ChevronLeft, Flag, Eye }
 
 const tabs = [
   { value: 'library', label: '题库', icon: BookOpen },
@@ -303,6 +478,10 @@ const sessions = ref<ExerciseSessionItem[]>([])
 const sessionTotal = ref(0)
 const loadingSessions = ref(false)
 
+// 收藏状态
+const exerciseFavorites = ref<Record<string, FavoriteItem | undefined>>({})
+const favoriteLoading = ref<Record<string, boolean>>({})
+
 // 开始练习弹窗
 const showStartSession = ref(false)
 const startingSession = ref(false)
@@ -311,6 +490,35 @@ const sessionForm = ref({
   exercise_count: 5,
   difficulty: null as number | null
 })
+
+// 当前练习会话（答题模式）
+interface CurrentExercise {
+  id: string
+  type: string
+  question: string
+  options: string[] | null
+  difficulty: number
+  knowledge_point: string | null
+}
+
+interface AnswerRecord {
+  exercise_id: string
+  user_answer: string
+  is_correct?: boolean
+  correct_answer?: string
+  explanation?: string | null
+  score?: number
+  submitted: boolean
+}
+
+const currentSession = ref<ExerciseSessionItem | null>(null)
+const currentExercises = ref<CurrentExercise[]>([])
+const currentAnswers = ref<Record<string, AnswerRecord>>({})
+const currentExerciseIndex = ref(0)
+const loadingSessionDetail = ref(false)
+const completingSession = ref(false)
+const sessionCompleted = ref(false)
+const sessionSummary = ref<{ total: number; correct: number; wrong: number; score: number } | null>(null)
 
 const getTypeText = (type: string): string => {
   const map: Record<string, string> = {
@@ -343,10 +551,45 @@ const loadExercises = async () => {
     })
     exercises.value = res.items
     exerciseTotal.value = res.total
+    await loadExerciseFavorites()
   } catch (e) {
     console.error('加载题库失败:', e)
   } finally {
     loadingExercises.value = false
+  }
+}
+
+// 加载练习题收藏状态
+const loadExerciseFavorites = async () => {
+  try {
+    const res = await getFavorites({ target_type: 'exercise', page_size: 100 })
+    const map: Record<string, FavoriteItem | undefined> = {}
+    res.items.forEach(item => {
+      map[item.target_id] = item
+    })
+    exerciseFavorites.value = map
+  } catch (e) {
+    console.error('加载练习题收藏状态失败:', e)
+  }
+}
+
+// 切换收藏状态
+const toggleFavorite = async (exerciseId: string) => {
+  if (favoriteLoading.value[exerciseId]) return
+  favoriteLoading.value[exerciseId] = true
+  try {
+    if (exerciseFavorites.value[exerciseId]) {
+      await removeFavoriteByTarget('exercise', exerciseId)
+      exerciseFavorites.value[exerciseId] = undefined
+    } else {
+      const favorite = await createFavorite({ target_type: 'exercise', target_id: exerciseId })
+      exerciseFavorites.value[exerciseId] = favorite
+    }
+  } catch (e) {
+    console.error('收藏操作失败:', e)
+    alert('收藏操作失败，请重试')
+  } finally {
+    favoriteLoading.value[exerciseId] = false
   }
 }
 
@@ -387,19 +630,110 @@ const handleStartSession = async () => {
 
   startingSession.value = true
   try {
-    await generateExerciseSession({
+    const res = await generateExerciseSession({
       subject: sessionForm.value.subject,
       exercise_count: sessionForm.value.exercise_count,
       difficulty: sessionForm.value.difficulty || undefined
     })
     showStartSession.value = false
     sessionForm.value = { subject: '', exercise_count: 5, difficulty: null }
+    await enterSession(res.session, res.exercises)
     await loadSessions()
   } catch (e: any) {
     console.error('生成练习失败:', e)
     alert(e.response?.data?.detail || '生成练习失败，请重试')
   } finally {
     startingSession.value = false
+  }
+}
+
+// 进入答题会话
+const enterSession = (session: ExerciseSessionItem, exercises: CurrentExercise[]) => {
+  currentSession.value = session
+  currentExercises.value = exercises
+  currentExerciseIndex.value = 0
+  currentAnswers.value = {}
+  sessionCompleted.value = false
+  sessionSummary.value = null
+  exercises.forEach(ex => {
+    currentAnswers.value[ex.id] = {
+      exercise_id: ex.id,
+      user_answer: '',
+      submitted: false
+    }
+  })
+}
+
+// 重置答题会话
+const closeSession = () => {
+  currentSession.value = null
+  currentExercises.value = []
+  currentAnswers.value = {}
+  currentExerciseIndex.value = 0
+  sessionCompleted.value = false
+  sessionSummary.value = null
+}
+
+// 当前题目
+const currentExercise = computed(() =>
+  currentExercises.value[currentExerciseIndex.value] || null
+)
+
+const currentAnswer = computed(() =>
+  currentExercise.value ? currentAnswers.value[currentExercise.value.id] : null
+)
+
+// 提交当前题目答案
+const submitCurrentAnswer = async () => {
+  if (!currentExercise.value || !currentAnswer.value) return
+  const ex = currentExercise.value
+  const answer = currentAnswer.value
+  if (!answer.user_answer.trim()) {
+    alert('请填写答案')
+    return
+  }
+  try {
+    const res = await submitAnswer(ex.id, { user_answer: answer.user_answer, time_spent: 0 })
+    answer.is_correct = res.is_correct
+    answer.correct_answer = res.correct_answer
+    answer.explanation = res.explanation
+    answer.score = res.score
+    answer.submitted = true
+  } catch (e) {
+    console.error('提交答案失败:', e)
+    alert('提交答案失败，请重试')
+  }
+}
+
+// 完成练习会话
+const finishSession = async () => {
+  if (!currentSession.value) return
+  completingSession.value = true
+  try {
+    const res = await completeExerciseSession(currentSession.value.id)
+    sessionSummary.value = res.summary
+    sessionCompleted.value = true
+    await loadHistory()
+    await loadSessions()
+  } catch (e) {
+    console.error('完成练习会话失败:', e)
+    alert('完成练习失败，请重试')
+  } finally {
+    completingSession.value = false
+  }
+}
+
+// 继续历史会话
+const continueSession = async (session: ExerciseSessionItem) => {
+  loadingSessionDetail.value = true
+  try {
+    const res = await getExerciseSession(session.id)
+    enterSession(res.session, res.exercises)
+  } catch (e) {
+    console.error('加载练习会话失败:', e)
+    alert('加载练习会话失败')
+  } finally {
+    loadingSessionDetail.value = false
   }
 }
 
@@ -817,8 +1151,84 @@ onMounted(() => {
 .session-time {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.session-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding-top: 8px;
   border-top: 1px solid var(--border-color);
+}
+
+.session-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  .btn-icon { width: 12px; height: 12px; }
+
+  &.continue {
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+    &:hover:not(:disabled) { background: rgba(59, 130, 246, 0.2); }
+  }
+
+  &.review {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+    &:hover:not(:disabled) { background: rgba(16, 185, 129, 0.2); }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.favorite-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  .btn-icon { width: 13px; height: 13px; }
+
+  &:hover:not(:disabled) {
+    border-color: #ec4899;
+    color: #ec4899;
+  }
+
+  &.favorited {
+    border-color: #ec4899;
+    color: #ec4899;
+    background: rgba(236, 72, 153, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 /* 弹窗 */
@@ -943,6 +1353,278 @@ onMounted(() => {
   }
 
   &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.session-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 20px;
+}
+
+.session-panel {
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalIn 0.3s ease-out;
+}
+
+.session-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .session-progress-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 4px 0 0;
+  }
+}
+
+.session-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.session-panel-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+}
+
+.btn-secondary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: var(--bg-primary); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-icon { width: 14px; height: 14px; }
+}
+
+.question-area {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.question-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.question-content {
+  font-size: 15px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  padding: 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.option-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+  }
+
+  &:hover:not(.selected):not(.correct):not(.wrong) {
+    border-color: rgba(99, 102, 241, 0.5);
+  }
+
+  &.selected {
+    border-color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.1);
+  }
+
+  &.correct {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+  }
+
+  &.wrong {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+  }
+}
+
+.answer-input-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  textarea {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    color: var(--text-primary);
+    font-size: 14px;
+    resize: vertical;
+
+    &:focus { outline: none; border-color: var(--primary-color); }
+    &:disabled { opacity: 0.7; cursor: not-allowed; }
+  }
+}
+
+.answer-result {
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid;
+
+  &.correct {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #34d399;
+  }
+
+  &.wrong {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #f87171;
+  }
+
+  .result-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 10px;
+
+    .result-icon { width: 18px; height: 18px; }
+  }
+
+  .result-detail {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+
+    strong { color: var(--text-primary); }
+
+    p { margin: 4px 0; }
+  }
+}
+
+.session-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+
+  .summary-score {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    border: 4px solid;
+
+    &.pass { border-color: #10b981; color: #34d399; }
+    &.fail { border-color: #ef4444; color: #f87171; }
+
+    .score-num {
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 120px;
+    }
+
+    .score-label {
+      font-size: 16px;
+      font-weight: 600;
+    }
+  }
+
+  .summary-stats {
+    display: flex;
+    gap: 24px;
+  }
+
+  .summary-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+
+    .label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    &.correct .value { color: #34d399; }
+    &.wrong .value { color: #f87171; }
+  }
 }
 
 .modal-enter-active,

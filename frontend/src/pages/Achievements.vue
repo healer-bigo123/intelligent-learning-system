@@ -107,11 +107,10 @@
 import { ref, computed, onMounted } from 'vue'
 import {
   Star, Flame, BookOpen, Target, Clock,
-  Award, Lock, Zap, Heart, Share2, Users,
-  Lightbulb, Cpu, Shield, Aperture, Search, Code, Globe
+  Award, Lock, Zap, Heart, Share2, Users
 } from 'lucide-vue-next'
 import type { Component } from 'vue'
-import { getAchievements, getMyAchievements, checkAchievements, type AchievementItem } from '@/api/achievements'
+import { getAchievements, getMyAchievements, checkAchievements } from '@/api/achievements'
 
 const categories = [
   { key: 'all', label: '全部', icon: Star },

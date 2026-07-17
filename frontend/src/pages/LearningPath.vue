@@ -3,27 +3,18 @@
     <!-- 顶部筛选栏 -->
     <div class="filter-bar">
       <div class="filter-left">
-        <select v-model="activeSubject" class="filter-select">
-          <option value="all">全部学科</option>
-          <option v-for="s in availableSubjects" :key="s.id" :value="s.id">{{ s.name }}</option>
+        <select v-model="activeStatus" class="filter-select" @change="loadPaths">
+          <option value="all">全部状态</option>
+          <option value="active">进行中</option>
+          <option value="completed">已完成</option>
+          <option value="paused">已暂停</option>
         </select>
-        <div class="grade-select-wrapper">
-          <component :is="icons.GraduationCap" class="select-icon" />
-          <select v-model="activeGrade" class="grade-select">
-            <option value="all">全部年级</option>
-            <option value="grade10">高一</option>
-            <option value="grade11">高二</option>
-            <option value="grade12">高三</option>
-          </select>
-        </div>
-      </div>
-      <div class="filter-right">
         <div class="search-box">
           <component :is="icons.Search" class="search-icon" />
           <input
             type="text"
             v-model="searchQuery"
-            placeholder="搜索知识点..."
+            placeholder="搜索学习路径..."
             class="search-input"
             @input="onSearch"
           />
@@ -31,81 +22,89 @@
             <component :is="icons.X" class="clear-icon" />
           </button>
         </div>
+      </div>
+      <div class="filter-right">
         <div class="stats-row">
           <div class="stat-item">
-            <span class="stat-num green">{{ stats.unlocked }}</span>
-            <span class="stat-label">已解锁</span>
+            <span class="stat-num green">{{ progressStats.completed_paths }}</span>
+            <span class="stat-label">已完成</span>
           </div>
           <div class="stat-item">
-            <span class="stat-num gray">{{ stats.locked }}</span>
-            <span class="stat-label">未解锁</span>
+            <span class="stat-num blue">{{ progressStats.total_paths }}</span>
+            <span class="stat-label">总路径</span>
           </div>
           <div class="stat-item">
-            <span class="stat-num blue">{{ stats.total }}</span>
-            <span class="stat-label">总知识点</span>
+            <span class="stat-num purple">{{ progressStats.overall_progress }}%</span>
+            <span class="stat-label">总进度</span>
           </div>
         </div>
+        <button class="btn-primary" @click="showCreateModal = true">
+          <component :is="icons.Plus" class="btn-icon" />
+          新建路径
+        </button>
       </div>
     </div>
 
     <!-- 搜索结果提示 -->
     <div v-if="searchQuery && searchResults.length > 0" class="search-hint">
-      找到 {{ searchResults.length }} 个匹配知识点
+      找到 {{ searchResults.length }} 个匹配步骤
     </div>
 
-    <!-- 地图区域 -->
-    <div class="map-container">
-      <div class="map-scroll">
-        <!-- 返回全部学科按钮 -->
-        <button v-if="activeSubject !== 'all'" class="back-to-all-btn" @click="onSubjectChange('all')">
-          <component :is="icons.ChevronLeft" class="back-icon" />
-          <span>返回全部学科</span>
-        </button>
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading-state">
+      <div class="loading-spinner"></div>
+      <span>加载学习路径...</span>
+    </div>
 
-        <!-- 按学科分组渲染 -->
+    <div v-else-if="visiblePaths.length === 0" class="empty-state">
+      <component :is="icons.Map" class="empty-icon" />
+      <p class="empty-text">暂无学习路径</p>
+      <p class="empty-hint">点击"新建路径"开始规划学习路线</p>
+    </div>
+
+    <!-- 路径地图区域 -->
+    <div v-else class="map-container">
+      <div class="map-scroll">
         <div
-          v-for="subject in visibleSubjects"
-          :key="subject.id"
-          class="subject-section"
-          :class="{ clickable: activeSubject === 'all', active: activeSubject === subject.id }"
-          @click="activeSubject === 'all' && onSubjectChange(subject.id)"
+          v-for="path in visiblePaths"
+          :key="path.id"
+          class="subject-section active"
         >
-          <!-- 学科标题 -->
+          <!-- 路径标题 -->
           <div class="subject-header">
-            <div class="subject-icon-wrap" :style="{ background: subject.color }">
-              <component :is="subject.icon" class="subject-icon" />
+            <div class="subject-icon-wrap" :style="{ background: path.color }">
+              <component :is="path.icon" class="subject-icon" />
             </div>
             <div class="subject-info">
-              <h3 class="subject-name">{{ subject.name }}</h3>
-              <span class="subject-desc">{{ subject.courseName }}</span>
+              <h3 class="subject-name">{{ path.title }}</h3>
+              <span class="subject-desc">{{ path.description || '暂无描述' }}</span>
             </div>
             <div class="subject-progress">
               <div class="progress-bar">
-                <div class="progress-fill" :style="{ width: subject.progress + '%' }"></div>
+                <div class="progress-fill" :style="{ width: path.progress + '%', background: path.color }"></div>
               </div>
-              <span class="progress-text">{{ subject.progress }}%</span>
+              <span class="progress-text">{{ path.progress }}%</span>
             </div>
+            <button
+              class="delete-path-btn"
+              @click.stop="handleDeletePath(path.id)"
+              title="删除路径"
+            >
+              <component :is="icons.Trash2" class="btn-icon" />
+            </button>
           </div>
 
           <!-- 路径地图 -->
-          <div class="path-map" :style="{ minHeight: subject.mapHeight + 'px' }">
+          <div class="path-map" :style="{ minHeight: path.mapHeight + 'px' }">
             <svg class="path-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
               <defs>
-                <linearGradient :id="`pathGrad-${subject.id}`" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" :stop-color="subject.color" stop-opacity="0.8" />
-                  <stop offset="100%" :stop-color="subject.color" stop-opacity="0.3" />
+                <linearGradient :id="`pathGrad-${path.id}`" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" :stop-color="path.color" stop-opacity="0.8" />
+                  <stop offset="100%" :stop-color="path.color" stop-opacity="0.3" />
                 </linearGradient>
-                <filter :id="`glow-${subject.id}`">
-                  <feGaussianBlur stdDeviation="4" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
               </defs>
-              <!-- 背景路径 -->
               <path
-                :d="getPathD(subject.nodes)"
+                :d="getPathD(path.nodes)"
                 fill="none"
                 stroke="var(--border-color)"
                 stroke-width="1.5"
@@ -113,41 +112,29 @@
                 stroke-linejoin="round"
                 opacity="0.2"
               />
-              <!-- 已解锁路径 -->
               <path
-                :d="getPathD(subject.nodes)"
+                :d="getPathD(path.nodes)"
                 fill="none"
-                :stroke="`url(#pathGrad-${subject.id})`"
+                :stroke="`url(#pathGrad-${path.id})`"
                 stroke-width="1.5"
                 stroke-linecap="round"
                 stroke-linejoin="round"
-                :stroke-dasharray="subject.pathLength"
-                :stroke-dashoffset="subject.pathOffset"
+                :stroke-dasharray="path.pathLength"
+                :stroke-dashoffset="path.pathOffset"
                 style="transition: stroke-dashoffset 0.8s ease"
-              />
-              <!-- 虚线装饰 -->
-              <path
-                :d="getPathD(subject.nodes)"
-                fill="none"
-                stroke="white"
-                stroke-width="0.1"
-                stroke-dasharray="0.5 0.4"
-                stroke-linecap="round"
-                opacity="0.5"
               />
             </svg>
 
-            <!-- 知识点节点 -->
             <div
-              v-for="(node, index) in subject.nodes"
-              :key="node.id"
+              v-for="(node, index) in path.nodes"
+              :key="`${path.id}-${index}`"
               class="map-node"
               :class="[
                 node.status,
                 { searched: isNodeSearched(node) }
               ]"
               :style="{ left: node.x + '%', top: node.y + '%' }"
-              @click="selectNode(node)"
+              @click="selectNode(path, node, index)"
             >
               <div class="node-ring" :class="node.status"></div>
               <div class="node-icon-wrap" :class="node.status">
@@ -164,18 +151,18 @@
       </div>
     </div>
 
-    <!-- 知识点详情面板 -->
+    <!-- 步骤详情面板 -->
     <Transition name="slide">
       <div class="detail-panel" v-if="selectedNode">
         <div class="panel-header">
           <div class="panel-title-row">
-            <div class="title-icon" :class="selectedNode.status" :style="{ background: getSubjectColor(selectedNode.subject) }">
+            <div class="title-icon" :class="selectedNode.status" :style="{ background: selectedPathColor }">
               <component v-if="selectedNode.status === 'unlocked'" :is="selectedNode.icon" class="icon" />
               <component v-else :is="icons.Lock" class="icon" />
             </div>
             <div>
               <h3 class="panel-title">{{ selectedNode.title }}</h3>
-              <span class="panel-subtitle">{{ selectedNode.courseName }} · {{ selectedNode.chapter }}</span>
+              <span class="panel-subtitle">{{ selectedPathTitle }}</span>
             </div>
           </div>
           <button class="close-btn" @click="selectedNode = null">
@@ -184,7 +171,7 @@
         </div>
         <div class="panel-content">
           <div class="info-section">
-            <h4 class="section-title">知识点概述</h4>
+            <h4 class="section-title">步骤概述</h4>
             <p class="section-desc">{{ selectedNode.description || '暂无描述' }}</p>
           </div>
           <div class="info-section">
@@ -192,7 +179,7 @@
             <div class="status-badge" :class="selectedNode.status">
               <component v-if="selectedNode.status === 'unlocked'" :is="icons.Unlock" class="badge-icon" />
               <component v-else :is="icons.Lock" class="badge-icon" />
-              <span>{{ selectedNode.status === 'unlocked' ? '已解锁' : '未解锁' }}</span>
+              <span>{{ selectedNode.status === 'unlocked' ? '已完成' : '未完成' }}</span>
             </div>
           </div>
           <div class="info-section">
@@ -200,23 +187,13 @@
             <div class="info-grid">
               <div class="info-item">
                 <component :is="icons.BookOpen" class="info-icon" />
-                <span>所属课程</span>
-                <strong>{{ selectedNode.courseName }}</strong>
-              </div>
-              <div class="info-item">
-                <component :is="icons.FolderOpen" class="info-icon" />
-                <span>所属章节</span>
-                <strong>{{ selectedNode.chapter }}</strong>
+                <span>所属路径</span>
+                <strong>{{ selectedPathTitle }}</strong>
               </div>
               <div class="info-item">
                 <component :is="icons.Clock" class="info-icon" />
                 <span>预计时长</span>
-                <strong>{{ selectedNode.duration }}</strong>
-              </div>
-              <div class="info-item">
-                <component :is="icons.Target" class="info-icon" />
-                <span>难度</span>
-                <strong>{{ getDifficultyText(selectedNode.difficulty) }}</strong>
+                <strong>{{ selectedNode.duration || '未设置' }}</strong>
               </div>
             </div>
           </div>
@@ -225,110 +202,176 @@
             <button
               v-if="selectedNode.status === 'locked'"
               class="btn-primary"
-              disabled
+              @click="completeSelectedStep"
+              :disabled="completingStep"
             >
-              未解锁
+              {{ completingStep ? '提交中...' : '标记完成' }}
             </button>
-            <button
-              v-else
-              class="btn-primary"
-            >
-              开始学习
-            </button>
+            <button v-else class="btn-primary" disabled>已完成</button>
           </div>
         </div>
       </div>
     </Transition>
+
+    <!-- 新建路径弹窗 -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div class="modal-overlay" v-if="showCreateModal" @click.self="showCreateModal = false">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>新建学习路径</h3>
+              <button class="modal-close" @click="showCreateModal = false">
+                <component :is="icons.X" class="close-icon" />
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label>路径标题</label>
+                <input v-model="createForm.title" type="text" placeholder="如：机器学习入门" />
+              </div>
+              <div class="form-group">
+                <label>路径描述</label>
+                <textarea v-model="createForm.description" rows="2" placeholder="描述该学习路径的目标"></textarea>
+              </div>
+              <div class="form-group">
+                <label>学习步骤（每行一个步骤，用 | 分隔标题、描述和预计时长）</label>
+                <textarea
+                  v-model="createForm.stepsText"
+                  rows="6"
+                  placeholder="如：&#10;导论 | 了解基本概念 | 30&#10;线性回归 | 掌握线性模型原理 | 60"
+                ></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-cancel" @click="showCreateModal = false">取消</button>
+              <button class="btn-confirm" @click="handleCreatePath" :disabled="creatingPath">
+                {{ creatingPath ? '创建中...' : '创建' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import {
   Search, X, BookOpen, Clock, Lock, Unlock,
   Calculator, FlaskConical, Code, Globe, GraduationCap,
   FolderOpen, Target, ChevronLeft,
-  Lightbulb, Cpu, Shield, Aperture
+  Lightbulb, Cpu, Shield, Aperture, Map, Plus, Trash2
 } from 'lucide-vue-next'
+import {
+  getLearningPaths, getLearningPathProgress, createLearningPath,
+  deleteLearningPath, completeLearningPathStep,
+  type LearningPathItem, type LearningPathProgressStats, type LearningPathStep
+} from '@/api/learningPaths'
 
 const icons = {
   Search, X, BookOpen, Clock, Lock, Unlock,
   Calculator, FlaskConical, Code, Globe, GraduationCap,
   FolderOpen, Target, ChevronLeft,
-  Lightbulb, Cpu, Shield, Aperture
+  Lightbulb, Cpu, Shield, Aperture, Map, Plus, Trash2
 }
 
 // ===== 状态 =====
-const activeSubject = ref('all')
-const activeGrade = ref('all')
-const activeCourse = ref('all')
+const loading = ref(false)
+const activeStatus = ref('all')
 const searchQuery = ref('')
-const selectedNode = ref<any>(null)
 const searchResults = ref<any[]>([])
+const selectedNode = ref<any>(null)
+const selectedPathId = ref<string>('')
+const selectedStepIndex = ref<number>(-1)
+const completingStep = ref(false)
 
-// 全部章节列表（人工智能导论）
-const allSubjectList = [
-  { id: 'overview', name: '人工智能概述' },
-  { id: 'search', name: '搜索与推理' },
-  { id: 'ml', name: '机器学习' },
-  { id: 'dl', name: '深度学习' },
-  { id: 'nlp', name: '自然语言处理' },
-  { id: 'cv', name: '计算机视觉' },
-  { id: 'ethics', name: '人工智能伦理' }
+const paths = ref<LearningPathItem[]>([])
+const progressStats = ref<LearningPathProgressStats>({
+  total_paths: 0,
+  active_paths: 0,
+  completed_paths: 0,
+  total_steps: 0,
+  completed_steps: 0,
+  overall_progress: 0
+})
+
+// 新建路径弹窗
+const showCreateModal = ref(false)
+const creatingPath = ref(false)
+const createForm = ref({
+  title: '',
+  description: '',
+  stepsText: ''
+})
+
+// ===== 颜色与图标映射 =====
+const colorPalette = [
+  '#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'
 ]
 
-function onSubjectChange(val: string) {
-  activeSubject.value = val
+const iconPalette = [
+  BookOpen, Search, Code, Cpu, Globe, Aperture, Shield, Lightbulb, Calculator, FlaskConical
+]
+
+const getPathColor = (pathId: string): string => {
+  let hash = 0
+  for (let i = 0; i < pathId.length; i++) {
+    hash = pathId.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return colorPalette[Math.abs(hash) % colorPalette.length]
 }
 
-// ===== 数据 =====
+const getPathIcon = (pathId: string): any => {
+  let hash = 0
+  for (let i = 0; i < pathId.length; i++) {
+    hash = pathId.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return iconPalette[Math.abs(hash) % iconPalette.length]
+}
+
+const getNodeIcon = (pathId: string, index: number): any => {
+  return iconPalette[(Math.abs(index) + pathId.length) % iconPalette.length]
+}
+
+// ===== 数据转换 =====
 interface PathNode {
-  id: string
   title: string
   description: string
-  icon: any
-  status: 'unlocked' | 'locked'
-  subject: string
-  grade: string
-  courseId: string
-  courseName: string
-  chapter: string
   duration: string
-  difficulty: 'easy' | 'medium' | 'hard'
+  status: 'unlocked' | 'locked'
+  icon: any
   x: number
   y: number
+  pathId: string
+  stepIndex: number
 }
 
-interface SubjectInfo {
+interface PathView {
   id: string
-  name: string
-  icon: any
+  title: string
+  description: string | null
+  status: string
   color: string
-  courseName: string
-  nodes: PathNode[]
+  icon: any
   progress: number
   pathLength: number
   pathOffset: number
   mapHeight: number
+  nodes: PathNode[]
 }
 
-// 生成蜿蜒路径坐标（百分比）
 function generateSnakePath(count: number): { x: number; y: number }[] {
   const positions: { x: number; y: number }[] = []
   const cols = 5
-  // 列宽：5列均分100%，每列20%
   const colWidth = 20
-  // 行高：固定16%
   const rowHeight = 16
-  // 起始X：第一列中心在10%处
   const startX = 10
-  // 起始Y：从8%开始
   const startY = 8
 
   for (let i = 0; i < count; i++) {
     const col = i % cols
     const row = Math.floor(i / cols)
-    // 蛇形：偶数行从左到右，奇数行从右到左
     const actualCol = row % 2 === 0 ? col : (cols - 1 - col)
     positions.push({
       x: startX + actualCol * colWidth,
@@ -338,130 +381,104 @@ function generateSnakePath(count: number): { x: number; y: number }[] {
   return positions
 }
 
-const allNodes: Omit<PathNode, 'x' | 'y'>[] = [
-  // 人工智能概述
-  { id: 'ai-o1', title: '人工智能定义', description: '理解人工智能的基本概念与核心目标', icon: BookOpen, status: 'unlocked', subject: 'overview', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第一章 人工智能概述', duration: '45分钟', difficulty: 'easy' },
-  { id: 'ai-o2', title: '发展历程', description: '从图灵测试到现代AI的发展脉络', icon: BookOpen, status: 'unlocked', subject: 'overview', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第一章 人工智能概述', duration: '60分钟', difficulty: 'medium' },
-  { id: 'ai-o3', title: '主要流派', description: '符号主义、连接主义与行为主义', icon: BookOpen, status: 'unlocked', subject: 'overview', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第一章 人工智能概述', duration: '60分钟', difficulty: 'medium' },
-  { id: 'ai-o4', title: '应用领域', description: 'AI在医疗、金融、交通等领域的典型应用', icon: BookOpen, status: 'unlocked', subject: 'overview', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第一章 人工智能概述', duration: '90分钟', difficulty: 'easy' },
-  { id: 'ai-o5', title: '智能体模型', description: '感知、决策与行动的智能体框架', icon: Lightbulb, status: 'locked', subject: 'overview', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第一章 人工智能概述', duration: '90分钟', difficulty: 'medium' },
-  // 搜索与推理
-  { id: 'ai-s1', title: '问题求解', description: '状态空间、搜索树与问题归约', icon: Search, status: 'unlocked', subject: 'search', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第二章 搜索与推理', duration: '60分钟', difficulty: 'medium' },
-  { id: 'ai-s2', title: '盲目搜索', description: '深度优先、广度优先与一致代价搜索', icon: Search, status: 'unlocked', subject: 'search', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第二章 搜索与推理', duration: '90分钟', difficulty: 'medium' },
-  { id: 'ai-s3', title: '启发式搜索', description: 'A*算法与启发函数设计', icon: Search, status: 'unlocked', subject: 'search', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第二章 搜索与推理', duration: '120分钟', difficulty: 'hard' },
-  { id: 'ai-s4', title: '知识表示', description: '谓词逻辑、语义网络与知识图谱', icon: Search, status: 'locked', subject: 'search', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第二章 搜索与推理', duration: '90分钟', difficulty: 'hard' },
-  { id: 'ai-s5', title: '推理方法', description: '演绎推理、归纳推理与不确定性推理', icon: Search, status: 'locked', subject: 'search', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第二章 搜索与推理', duration: '120分钟', difficulty: 'hard' },
-  // 机器学习
-  { id: 'ai-ml1', title: '机器学习概述', description: '学习范式、数据集与模型评估', icon: Code, status: 'unlocked', subject: 'ml', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第三章 机器学习', duration: '60分钟', difficulty: 'easy' },
-  { id: 'ai-ml2', title: '监督学习', description: '分类与回归：KNN、决策树与线性回归', icon: Code, status: 'unlocked', subject: 'ml', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第三章 机器学习', duration: '120分钟', difficulty: 'medium' },
-  { id: 'ai-ml3', title: '无监督学习', description: '聚类与降维：K-Means与PCA', icon: Code, status: 'unlocked', subject: 'ml', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第三章 机器学习', duration: '90分钟', difficulty: 'medium' },
-  { id: 'ai-ml4', title: '强化学习', description: '智能体、奖励与策略梯度基础', icon: Code, status: 'locked', subject: 'ml', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第三章 机器学习', duration: '120分钟', difficulty: 'hard' },
-  { id: 'ai-ml5', title: '模型评估', description: '交叉验证、过拟合与正则化', icon: Code, status: 'locked', subject: 'ml', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第三章 机器学习', duration: '90分钟', difficulty: 'medium' },
-  // 深度学习
-  { id: 'ai-dl1', title: '神经网络基础', description: '感知机、多层网络与反向传播', icon: Cpu, status: 'unlocked', subject: 'dl', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第四章 深度学习', duration: '120分钟', difficulty: 'medium' },
-  { id: 'ai-dl2', title: '卷积神经网络', description: '卷积、池化与CNN典型结构', icon: Cpu, status: 'unlocked', subject: 'dl', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第四章 深度学习', duration: '120分钟', difficulty: 'hard' },
-  { id: 'ai-dl3', title: '循环神经网络', description: 'RNN、LSTM与序列建模', icon: Cpu, status: 'locked', subject: 'dl', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第四章 深度学习', duration: '120分钟', difficulty: 'hard' },
-  { id: 'ai-dl4', title: '优化与正则化', description: '梯度下降、Dropout与批归一化', icon: Cpu, status: 'locked', subject: 'dl', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第四章 深度学习', duration: '90分钟', difficulty: 'hard' },
-  // 自然语言处理
-  { id: 'ai-nlp1', title: '文本分析基础', description: '分词、词性标注与命名实体识别', icon: Globe, status: 'unlocked', subject: 'nlp', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第五章 自然语言处理', duration: '60分钟', difficulty: 'medium' },
-  { id: 'ai-nlp2', title: '语言模型', description: 'n-gram、词向量与Transformer', icon: Globe, status: 'unlocked', subject: 'nlp', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第五章 自然语言处理', duration: '120分钟', difficulty: 'hard' },
-  { id: 'ai-nlp3', title: '机器翻译', description: '序列到序列模型与注意力机制', icon: Globe, status: 'locked', subject: 'nlp', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第五章 自然语言处理', duration: '120分钟', difficulty: 'hard' },
-  { id: 'ai-nlp4', title: '情感分析', description: '文本分类与情感倾向识别', icon: Globe, status: 'locked', subject: 'nlp', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第五章 自然语言处理', duration: '90分钟', difficulty: 'medium' },
-  // 计算机视觉
-  { id: 'ai-cv1', title: '图像识别', description: '图像分类与特征提取', icon: Aperture, status: 'unlocked', subject: 'cv', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第六章 计算机视觉', duration: '90分钟', difficulty: 'medium' },
-  { id: 'ai-cv2', title: '目标检测', description: '边界框、IoU与经典检测算法', icon: Aperture, status: 'unlocked', subject: 'cv', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第六章 计算机视觉', duration: '120分钟', difficulty: 'hard' },
-  { id: 'ai-cv3', title: '图像生成', description: '生成对抗网络与扩散模型基础', icon: Aperture, status: 'locked', subject: 'cv', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第六章 计算机视觉', duration: '120分钟', difficulty: 'hard' },
-  { id: 'ai-cv4', title: '视觉应用', description: '人脸识别、OCR与自动驾驶视觉', icon: Aperture, status: 'locked', subject: 'cv', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第六章 计算机视觉', duration: '90分钟', difficulty: 'medium' },
-  // 人工智能伦理
-  { id: 'ai-e1', title: '伦理挑战', description: '算法偏见、公平性与透明度', icon: Shield, status: 'unlocked', subject: 'ethics', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第七章 人工智能伦理', duration: '60分钟', difficulty: 'medium' },
-  { id: 'ai-e2', title: '隐私问题', description: '数据隐私、联邦学习与差分隐私', icon: Shield, status: 'unlocked', subject: 'ethics', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第七章 人工智能伦理', duration: '90分钟', difficulty: 'medium' },
-  { id: 'ai-e3', title: '安全风险', description: '对抗样本、深度伪造与滥用防范', icon: Shield, status: 'locked', subject: 'ethics', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第七章 人工智能伦理', duration: '120分钟', difficulty: 'hard' },
-  { id: 'ai-e4', title: '未来治理', description: 'AI治理框架与 Responsible AI', icon: Shield, status: 'locked', subject: 'ethics', grade: 'grade10', courseId: 'ai-intro', courseName: '人工智能导论', chapter: '第七章 人工智能伦理', duration: '90分钟', difficulty: 'medium' }
-]
-
-
-
-// 构建学科分组
-const subjectGroups = computed(() => {
-  const groups: Record<string, Omit<PathNode, 'x' | 'y'>[]> = {}
-  allNodes.forEach(n => {
-    if (!groups[n.subject]) groups[n.subject] = []
-    groups[n.subject].push(n)
-  })
-  return groups
-})
-
-const subjectMeta: Record<string, { name: string; icon: any; color: string; courseName: string }> = {
-  overview: { name: '人工智能概述', icon: BookOpen, color: '#3b82f6', courseName: '人工智能导论' },
-  search: { name: '搜索与推理', icon: Search, color: '#f59e0b', courseName: '人工智能导论' },
-  ml: { name: '机器学习', icon: Code, color: '#10b981', courseName: '人工智能导论' },
-  dl: { name: '深度学习', icon: Cpu, color: '#ef4444', courseName: '人工智能导论' },
-  nlp: { name: '自然语言处理', icon: Globe, color: '#8b5cf6', courseName: '人工智能导论' },
-  cv: { name: '计算机视觉', icon: Aperture, color: '#06b6d4', courseName: '人工智能导论' },
-  ethics: { name: '人工智能伦理', icon: Shield, color: '#ec4899', courseName: '人工智能导论' }
+function parseSteps(path: LearningPathItem): PathNode[] {
+  try {
+    const steps = JSON.parse(path.steps || '[]')
+    const positions = generateSnakePath(steps.length)
+    return steps.map((step: any, index: number) => ({
+      title: step.title || `步骤 ${index + 1}`,
+      description: step.description || '',
+      duration: step.duration ? `${step.duration} 分钟` : '未设置',
+      status: step.status === 'completed' ? 'unlocked' : 'locked',
+      icon: getNodeIcon(path.id, index),
+      x: positions[index]?.x ?? 10,
+      y: positions[index]?.y ?? 10,
+      pathId: path.id,
+      stepIndex: index
+    }))
+  } catch {
+    return []
+  }
 }
 
-// 有数据的学科列表（用于下拉框）
-const availableSubjects = computed(() => {
-  return allSubjectList.filter(s => subjectGroups.value[s.id])
-})
-
-const visibleSubjects = computed<SubjectInfo[]>(() => {
-  const result: SubjectInfo[] = []
-
-  for (const [subjectId, nodes] of Object.entries(subjectGroups.value)) {
-    // 学科筛选
-    if (activeSubject.value !== 'all' && subjectId !== activeSubject.value) continue
-
-    // 筛选
-    let filtered = nodes
-    if (activeGrade.value !== 'all') {
-      filtered = filtered.filter(n => n.grade === activeGrade.value)
-    }
-    if (activeCourse.value !== 'all') {
-      filtered = filtered.filter(n => n.courseId === activeCourse.value)
-    }
-    if (filtered.length === 0) continue
-
-    // 生成坐标（百分比）
-    const positions = generateSnakePath(filtered.length)
-    const nodesWithPos: PathNode[] = filtered.map((n, i) => ({ ...n, x: positions[i].x, y: positions[i].y }))
-
-    const unlocked = nodesWithPos.filter(n => n.status === 'unlocked').length
-    const progress = Math.round((unlocked / nodesWithPos.length) * 100)
+const pathViews = computed<PathView[]>(() => {
+  return paths.value.map(path => {
+    const nodes = parseSteps(path)
+    const unlocked = nodes.filter(n => n.status === 'unlocked').length
+    const progress = nodes.length > 0 ? Math.round((unlocked / nodes.length) * 100) : 0
     const pathLength = 2000
-    const pathOffset = pathLength * (1 - unlocked / nodesWithPos.length)
-    const mapHeight = Math.max(500, Math.ceil(nodesWithPos.length / 5) * 200 + 200)
+    const pathOffset = pathLength * (1 - unlocked / nodes.length)
+    const mapHeight = Math.max(400, Math.ceil(nodes.length / 5) * 160 + 160)
 
-    const meta = subjectMeta[subjectId]
-    result.push({
-      id: subjectId,
-      name: meta.name,
-      icon: meta.icon,
-      color: meta.color,
-      courseName: meta.courseName,
-      nodes: nodesWithPos,
+    return {
+      id: path.id,
+      title: path.title,
+      description: path.description,
+      status: path.status,
+      color: getPathColor(path.id),
+      icon: getPathIcon(path.id),
       progress,
       pathLength,
       pathOffset,
-      mapHeight
-    })
+      mapHeight,
+      nodes
+    }
+  })
+})
+
+const visiblePaths = computed<PathView[]>(() => {
+  let result = pathViews.value
+
+  if (activeStatus.value !== 'all') {
+    result = result.filter(p => p.status === activeStatus.value)
+  }
+
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    result = result.filter(p =>
+      p.title.toLowerCase().includes(q) ||
+      (p.description && p.description.toLowerCase().includes(q)) ||
+      p.nodes.some(n =>
+        n.title.toLowerCase().includes(q) ||
+        n.description.toLowerCase().includes(q)
+      )
+    )
   }
 
   return result
 })
 
-const stats = computed(() => {
-  let total = 0, unlocked = 0, locked = 0
-  visibleSubjects.value.forEach(s => {
-    total += s.nodes.length
-    unlocked += s.nodes.filter(n => n.status === 'unlocked').length
-    locked += s.nodes.filter(n => n.status === 'locked').length
-  })
-  return { total, unlocked, locked }
-})
+// ===== 方法 =====
+const loadPaths = async () => {
+  loading.value = true
+  try {
+    const [pathRes, statsRes] = await Promise.all([
+      getLearningPaths({ status: activeStatus.value === 'all' ? undefined : activeStatus.value, page_size: 100 }),
+      getLearningPathProgress()
+    ])
+    paths.value = pathRes.items
+    progressStats.value = statsRes
+  } catch (e) {
+    console.error('加载学习路径失败:', e)
+  } finally {
+    loading.value = false
+  }
+}
 
-// 生成 SVG 路径（使用百分比坐标）
+const onSearch = () => {
+  if (!searchQuery.value) {
+    searchResults.value = []
+    return
+  }
+  const q = searchQuery.value.toLowerCase()
+  searchResults.value = visiblePaths.value.flatMap(p =>
+    p.nodes.filter(n =>
+      n.title.toLowerCase().includes(q) ||
+      n.description.toLowerCase().includes(q)
+    )
+  )
+}
+
 function getPathD(nodes: PathNode[]): string {
   if (nodes.length === 0) return ''
   if (nodes.length === 1) return `M ${nodes[0].x} ${nodes[0].y} L ${nodes[0].x + 0.5} ${nodes[0].y}`
@@ -478,41 +495,100 @@ function getPathD(nodes: PathNode[]): string {
   return d
 }
 
-// 搜索
-function onSearch() {
-  if (!searchQuery.value) {
-    searchResults.value = []
-    return
-  }
-  const q = searchQuery.value.toLowerCase()
-  searchResults.value = visibleSubjects.value.flatMap(s =>
-    s.nodes.filter(n =>
-      n.title.toLowerCase().includes(q) ||
-      n.description.toLowerCase().includes(q) ||
-      n.chapter.toLowerCase().includes(q)
-    )
-  )
-}
-
 function isNodeSearched(node: PathNode): boolean {
   if (!searchQuery.value) return false
   const q = searchQuery.value.toLowerCase()
   return node.title.toLowerCase().includes(q) || node.description.toLowerCase().includes(q)
 }
 
-function selectNode(node: PathNode) {
-  if (node.status === 'locked') return
+const selectedPathTitle = computed(() => {
+  const path = paths.value.find(p => p.id === selectedPathId.value)
+  return path ? path.title : ''
+})
+
+const selectedPathColor = computed(() => {
+  return selectedPathId.value ? getPathColor(selectedPathId.value) : '#6366f1'
+})
+
+function selectNode(path: PathView, node: PathNode, index: number) {
+  selectedPathId.value = path.id
+  selectedStepIndex.value = index
   selectedNode.value = node
 }
 
-function getSubjectColor(subject: string): string {
-  return subjectMeta[subject]?.color || '#6366f1'
+const completeSelectedStep = async () => {
+  if (!selectedPathId.value || selectedStepIndex.value < 0) return
+  completingStep.value = true
+  try {
+    await completeLearningPathStep(selectedPathId.value, selectedStepIndex.value)
+    selectedNode.value.status = 'unlocked'
+    await loadPaths()
+  } catch (e) {
+    console.error('标记步骤完成失败:', e)
+    alert('标记步骤完成失败，请重试')
+  } finally {
+    completingStep.value = false
+  }
 }
 
-function getDifficultyText(difficulty: string): string {
-  const map: Record<string, string> = { easy: '简单', medium: '中等', hard: '困难' }
-  return map[difficulty] || '中等'
+const handleCreatePath = async () => {
+  if (!createForm.value.title.trim()) {
+    alert('请输入路径标题')
+    return
+  }
+
+  const steps: LearningPathStep[] = []
+  if (createForm.value.stepsText.trim()) {
+    createForm.value.stepsText.split('\n').forEach(line => {
+      const parts = line.split('|').map(s => s.trim())
+      if (parts[0]) {
+        steps.push({
+          title: parts[0],
+          description: parts[1] || '',
+          duration: parts[2] ? parseInt(parts[2], 10) || undefined : undefined,
+          status: 'pending'
+        })
+      }
+    })
+  }
+
+  creatingPath.value = true
+  try {
+    await createLearningPath({
+      title: createForm.value.title.trim(),
+      description: createForm.value.description.trim() || undefined,
+      steps
+    })
+    showCreateModal.value = false
+    createForm.value = { title: '', description: '', stepsText: '' }
+    await loadPaths()
+  } catch (e) {
+    console.error('创建学习路径失败:', e)
+    alert('创建学习路径失败，请重试')
+  } finally {
+    creatingPath.value = false
+  }
 }
+
+const handleDeletePath = async (pathId: string) => {
+  if (!confirm('确定要删除这条学习路径吗？')) return
+  try {
+    await deleteLearningPath(pathId)
+    if (selectedPathId.value === pathId) {
+      selectedNode.value = null
+      selectedPathId.value = ''
+      selectedStepIndex.value = -1
+    }
+    await loadPaths()
+  } catch (e) {
+    console.error('删除学习路径失败:', e)
+    alert('删除学习路径失败')
+  }
+}
+
+onMounted(() => {
+  loadPaths()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -524,21 +600,18 @@ function getDifficultyText(difficulty: string): string {
   overflow: hidden;
 }
 
-// 筛选栏
 .filter-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   flex-shrink: 0;
-  margin-bottom: 20px;
 }
 
 .filter-left {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex: 1;
 }
 
 .filter-right {
@@ -571,41 +644,6 @@ function getDifficultyText(difficulty: string): string {
   }
 }
 
-.grade-select-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: linear-gradient(145deg, #273548, #1e293b);
-  border: 2px solid rgba(71, 85, 105, 0.8);
-  border-radius: var(--radius-md);
-  padding: 0 12px;
-  height: 40px;
-  min-width: 120px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
-
-  &:hover,
-  &:focus-within {
-    border-color: #60a5fa;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), 0 0 0 1px #60a5fa;
-  }
-
-  .select-icon { width: 15px; height: 15px; color: #94a3b8; }
-
-  .grade-select {
-    background: transparent;
-    border: none;
-    color: #e2e8f0;
-    font-size: 13px;
-    font-weight: 500;
-    outline: none;
-    cursor: pointer;
-    min-width: 80px;
-
-    option { background: #1e293b; color: #e2e8f0; }
-  }
-}
-
 .search-box {
   display: flex;
   align-items: center;
@@ -614,7 +652,7 @@ function getDifficultyText(difficulty: string): string {
   border: 2px solid rgba(71, 85, 105, 0.8);
   border-radius: var(--radius-md);
   padding: 8px 12px;
-  min-width: 200px;
+  min-width: 220px;
   height: 40px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   transition: all 0.3s ease;
@@ -650,6 +688,30 @@ function getDifficultyText(difficulty: string): string {
   }
 }
 
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  border: none;
+  border-radius: var(--radius-sm);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  .btn-icon { width: 14px; height: 14px; }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
 .stats-row {
   display: flex;
   gap: 16px;
@@ -665,8 +727,8 @@ function getDifficultyText(difficulty: string): string {
     font-size: 18px;
     font-weight: 700;
     &.green { color: var(--success-color); }
-    &.gray { color: var(--text-muted); }
     &.blue { color: var(--primary-color); }
+    &.purple { color: #c084fc; }
   }
 
   .stat-label { font-size: 11px; color: var(--text-muted); }
@@ -682,7 +744,40 @@ function getDifficultyText(difficulty: string): string {
   flex-shrink: 0;
 }
 
-// 地图区域
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: var(--text-muted);
+
+  .empty-icon { width: 56px; height: 56px; margin-bottom: 16px; opacity: 0.5; }
+  .empty-text { font-size: 16px; margin: 0 0 4px; }
+  .empty-hint { font-size: 13px; margin: 0; }
+}
+
 .map-container {
   flex: 1;
   background: var(--bg-secondary);
@@ -702,46 +797,12 @@ function getDifficultyText(difficulty: string): string {
   gap: 24px;
 }
 
-// 返回全部学科按钮
-.back-to-all-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: 8px;
-
-  &:hover {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-  }
-
-  .back-icon { width: 12px; height: 12px; }
-}
-
-// 学科分组
 .subject-section {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   overflow: auto;
   transition: all 0.25s ease;
-
-  &.clickable {
-    cursor: pointer;
-
-    &:hover {
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 1px var(--primary-color);
-    }
-  }
 
   &.active {
     border-color: var(--primary-color);
@@ -814,12 +875,33 @@ function getDifficultyText(difficulty: string): string {
   }
 }
 
-// 路径地图
+.delete-path-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  .btn-icon { width: 14px; height: 14px; }
+
+  &:hover {
+    border-color: #ef4444;
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.1);
+  }
+}
+
 .path-map {
   position: relative;
   width: 100%;
-  min-height: 400px;
-  padding: 30px 20px 100px 20px;
+  min-height: 360px;
+  padding: 30px 20px 80px 20px;
   overflow: hidden;
 }
 
@@ -833,7 +915,6 @@ function getDifficultyText(difficulty: string): string {
   z-index: 1;
 }
 
-// 知识点节点
 .map-node {
   position: absolute;
   width: 52px;
@@ -947,7 +1028,6 @@ function getDifficultyText(difficulty: string): string {
   }
 }
 
-// 详情面板
 .detail-panel {
   position: fixed;
   right: 24px;
@@ -1118,4 +1198,126 @@ function getDifficultyText(difficulty: string): string {
 .slide-enter-active, .slide-leave-active { transition: all 0.3s ease; }
 .slide-enter-from { opacity: 0; transform: translateX(20px); }
 .slide-leave-to { opacity: 0; transform: translateX(20px); }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 520px;
+  max-height: 80vh;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalIn 0.3s ease-out;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-color);
+
+  h3 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0; }
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .close-icon { width: 14px; height: 14px; color: var(--text-secondary); }
+
+  &:hover {
+    background: var(--bg-card);
+    border-color: var(--primary-color);
+  }
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  input, textarea {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    color: var(--text-primary);
+    font-size: 13px;
+    resize: vertical;
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+
+    &::placeholder { color: var(--text-muted); }
+  }
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+}
+
+.btn-cancel {
+  padding: 8px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  &:hover { background: var(--bg-primary); }
+}
+
+.modal-enter-active,
+.modal-leave-active { transition: opacity 0.3s ease; }
+.modal-enter-from,
+.modal-leave-to { opacity: 0; }
 </style>

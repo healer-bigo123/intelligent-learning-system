@@ -120,9 +120,20 @@
             <span class="subject-tag" :class="getSubjectClass(mistake.subject)">
               {{ mistake.subject }}
             </span>
-            <span class="status-tag" :class="mistake.status">
-              {{ getStatusText(mistake.status) }}
-            </span>
+            <div class="header-actions">
+              <button
+                class="favorite-btn"
+                :class="{ favorited: mistakeFavorites[mistake.id] }"
+                :disabled="favoriteLoading[mistake.id]"
+                @click.stop="toggleFavorite(mistake.id)"
+                :title="mistakeFavorites[mistake.id] ? '取消收藏' : '收藏'"
+              >
+                <Heart class="btn-icon" :fill="mistakeFavorites[mistake.id] ? 'currentColor' : 'none'" />
+              </button>
+              <span class="status-tag" :class="mistake.status">
+                {{ getStatusText(mistake.status) }}
+              </span>
+            </div>
           </div>
 
           <div class="mistake-question">{{ mistake.question }}</div>
@@ -250,15 +261,19 @@
 import { ref, computed, onMounted } from 'vue'
 import {
   FileText, AlertCircle, Eye, CheckCircle, BarChart,
-  Search, Plus, Edit, Trash2, X
+  Search, Plus, Edit, Trash2, X, Heart
 } from 'lucide-vue-next'
 import {
   getMistakes, getMistakeStats, createMistake, updateMistake,
   deleteMistake, reviewMistake,
   type MistakeItem, type MistakeStatsResponse
 } from '@/api/mistakes'
+import {
+  getFavorites, createFavorite, removeFavoriteByTarget,
+  type FavoriteItem
+} from '@/api/favorites'
 
-const icons = { FileText, AlertCircle, Eye, CheckCircle, BarChart, Search, Plus, Edit, Trash2, X }
+const icons = { FileText, AlertCircle, Eye, CheckCircle, BarChart, Search, Plus, Edit, Trash2, X, Heart }
 
 // 统计数据
 const stats = ref<MistakeStatsResponse>({
@@ -290,6 +305,10 @@ const subjectOptions = computed(() => {
   return merged
 })
 
+// 收藏状态
+const mistakeFavorites = ref<Record<string, FavoriteItem | undefined>>({})
+const favoriteLoading = ref<Record<string, boolean>>({})
+
 // 弹窗
 const showAddModal = ref(false)
 const editingMistake = ref<MistakeItem | null>(null)
@@ -314,6 +333,20 @@ const loadStats = async () => {
   }
 }
 
+// 加载错题收藏状态
+const loadMistakeFavorites = async () => {
+  try {
+    const res = await getFavorites({ target_type: 'mistake', page_size: 100 })
+    const map: Record<string, FavoriteItem | undefined> = {}
+    res.items.forEach(item => {
+      map[item.target_id] = item
+    })
+    mistakeFavorites.value = map
+  } catch (e) {
+    console.error('加载错题收藏状态失败:', e)
+  }
+}
+
 // 加载错题列表
 const loadMistakes = async () => {
   loading.value = true
@@ -327,6 +360,7 @@ const loadMistakes = async () => {
     })
     mistakes.value = res.items
     total.value = res.total
+    await loadMistakeFavorites()
   } catch (e) {
     console.error('加载错题列表失败:', e)
   } finally {
@@ -408,6 +442,26 @@ const handleDelete = async (mistakeId: string) => {
     await Promise.all([loadStats(), loadMistakes()])
   } catch (e) {
     console.error('删除失败:', e)
+  }
+}
+
+// 切换收藏状态
+const toggleFavorite = async (mistakeId: string) => {
+  if (favoriteLoading.value[mistakeId]) return
+  favoriteLoading.value[mistakeId] = true
+  try {
+    if (mistakeFavorites.value[mistakeId]) {
+      await removeFavoriteByTarget('mistake', mistakeId)
+      mistakeFavorites.value[mistakeId] = undefined
+    } else {
+      const favorite = await createFavorite({ target_type: 'mistake', target_id: mistakeId })
+      mistakeFavorites.value[mistakeId] = favorite
+    }
+  } catch (e) {
+    console.error('收藏操作失败:', e)
+    alert('收藏操作失败，请重试')
+  } finally {
+    favoriteLoading.value[mistakeId] = false
   }
 }
 
@@ -740,6 +794,45 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.favorite-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  .btn-icon { width: 14px; height: 14px; }
+
+  &:hover:not(:disabled) {
+    border-color: #ec4899;
+    color: #ec4899;
+  }
+
+  &.favorited {
+    border-color: #ec4899;
+    color: #ec4899;
+    background: rgba(236, 72, 153, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 .subject-tag {
