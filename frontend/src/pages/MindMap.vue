@@ -779,7 +779,6 @@ function computeMindMap() {
 
   const nodes: MindNode[] = []
   const conns: Connection[] = []
-  const color = selectedCourse.value.color
 
   // 中心节点
   nodes.push({

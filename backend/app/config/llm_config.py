@@ -10,27 +10,76 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ================ 当前使用的模型配置 ================
-LLM_CONFIG = {
-    # 模型提供商: "doubao", "qwen", "ernie", "openai", "claude", "spark", "ark", "volces"
-    "provider": os.getenv("LLM_PROVIDER", "volces"),
-    
-    # API Key（从环境变量或直接配置）
-    "api_key": os.getenv("VOLCES_API_KEY", "ark-8ecadcf3-5a8e-4b9d-80a0-3ebdda1d2c59-888c0"),
-    
-    # Secret Key（部分提供商需要，如豆包、ERNIE）
-    "secret_key": os.getenv("LLM_SECRET_KEY", ""),
-    
-    # 模型名称
-    "model_name": os.getenv("VOLCES_MODEL", "deepseek-v3-2-251201"),
-    
-    # 基础 URL（自定义部署时使用）
-    "base_url": os.getenv("VOLCES_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3"),
-    
-    # 模型参数
-    "temperature": float(os.getenv("LLM_TEMPERATURE", "0.7")),
-    "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "2048")),
-    "timeout": int(os.getenv("LLM_TIMEOUT", "30"))
-}
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "volces")
+
+# 根据提供商选择对应的环境变量
+if LLM_PROVIDER == "xinghuo":
+    LLM_CONFIG = {
+        "provider": "xinghuo",
+        "api_key": os.getenv("XINGHUO_API_KEY", ""),
+        "secret_key": os.getenv("XINGHUO_API_SECRET", ""),
+        "model_name": os.getenv("XINGHUO_MODEL", "spark-3.5"),
+        "base_url": os.getenv("XINGHUO_BASE_URL", "https://spark-api-open.xf-yun.com/v1"),
+        "temperature": float(os.getenv("LLM_TEMPERATURE", "0.7")),
+        "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "2048")),
+        "timeout": int(os.getenv("LLM_TIMEOUT", "30"))
+    }
+elif LLM_PROVIDER == "openai":
+    LLM_CONFIG = {
+        "provider": "openai",
+        "api_key": os.getenv("OPENAI_API_KEY", ""),
+        "secret_key": "",
+        "model_name": os.getenv("OPENAI_MODEL", "gpt-4"),
+        "base_url": os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"),
+        "temperature": float(os.getenv("LLM_TEMPERATURE", "0.7")),
+        "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "2048")),
+        "timeout": int(os.getenv("LLM_TIMEOUT", "30"))
+    }
+elif LLM_PROVIDER == "qwen":
+    LLM_CONFIG = {
+        "provider": "qwen",
+        "api_key": os.getenv("QWEN_API_KEY", ""),
+        "secret_key": "",
+        "model_name": os.getenv("QWEN_MODEL", "qwen-turbo"),
+        "base_url": os.getenv("QWEN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
+        "temperature": float(os.getenv("LLM_TEMPERATURE", "0.7")),
+        "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "2048")),
+        "timeout": int(os.getenv("LLM_TIMEOUT", "30"))
+    }
+elif LLM_PROVIDER == "ernie":
+    LLM_CONFIG = {
+        "provider": "ernie",
+        "api_key": os.getenv("ERNIE_API_KEY", ""),
+        "secret_key": os.getenv("ERNIE_SECRET_KEY", ""),
+        "model_name": os.getenv("ERNIE_MODEL", "ernie-4.0"),
+        "base_url": None,
+        "temperature": float(os.getenv("LLM_TEMPERATURE", "0.7")),
+        "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "2048")),
+        "timeout": int(os.getenv("LLM_TIMEOUT", "30"))
+    }
+elif LLM_PROVIDER == "doubao":
+    LLM_CONFIG = {
+        "provider": "doubao",
+        "api_key": os.getenv("DOUBAO_API_KEY", ""),
+        "secret_key": os.getenv("DOUBAO_SECRET_KEY", ""),
+        "model_name": os.getenv("DOUBAO_MODEL", "doubao-seed-2-1-turbo-260628"),
+        "base_url": os.getenv("DOUBAO_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3"),
+        "temperature": float(os.getenv("LLM_TEMPERATURE", "0.7")),
+        "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "2048")),
+        "timeout": int(os.getenv("LLM_TIMEOUT", "30"))
+    }
+else:
+    # 默认使用火山方舟 DeepSeek
+    LLM_CONFIG = {
+        "provider": "volces",
+        "api_key": os.getenv("VOLCES_API_KEY", "ark-8ecadcf3-5a8e-4b9d-80a0-3ebdda1d2c59-888c0"),
+        "secret_key": os.getenv("LLM_SECRET_KEY", ""),
+        "model_name": os.getenv("VOLCES_MODEL", "deepseek-v3-2-251201"),
+        "base_url": os.getenv("VOLCES_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3"),
+        "temperature": float(os.getenv("LLM_TEMPERATURE", "0.7")),
+        "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "2048")),
+        "timeout": int(os.getenv("LLM_TIMEOUT", "30"))
+    }
 
 # ================ 提示词模板 ================
 PROMPT_TEMPLATES = {

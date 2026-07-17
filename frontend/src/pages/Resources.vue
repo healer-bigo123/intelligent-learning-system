@@ -94,7 +94,7 @@
             <span v-for="tag in course.tags" :key="tag" class="tag">{{ tag }}</span>
           </div>
 
-          <button class="enroll-btn" :class="{ enrolled: course.enrolled }">
+          <button class="enroll-btn" :class="{ enrolled: course.enrolled }" @click="startLearning(course)">
             {{ course.enrolled ? '继续学习' : '开始学习' }}
             <component :is="course.enrolled ? icons.ArrowRight : icons.Plus" class="btn-icon" />
           </button>
@@ -120,6 +120,56 @@
         <component :is="icons.ChevronRight" class="page-icon" />
       </button>
     </div>
+
+    <!-- 视频推荐面板 -->
+    <div v-if="showVideoPanel" class="video-panel-overlay" @click="closeVideoPanel">
+      <div class="video-panel" @click.stop>
+        <div class="panel-header">
+          <h3>推荐学习视频</h3>
+          <button class="close-btn" @click="closeVideoPanel">
+            <component :is="icons.X" class="close-icon" />
+          </button>
+        </div>
+
+        <div v-if="videoLoading" class="video-loading">正在搜索相关视频...</div>
+
+        <div v-else-if="matchedVideos.length === 0" class="no-videos">
+          暂无匹配的视频资源
+        </div>
+
+        <div v-else class="video-list" @scroll="onVideoListScroll">
+          <a
+            v-for="video in matchedVideos"
+            :key="video.bvid"
+            :href="video.url"
+            target="_blank"
+            class="video-item"
+          >
+            <div class="video-cover-wrapper">
+              <img
+                :src="getCoverUrl(video.cover)"
+                :alt="video.title"
+                class="video-cover"
+                loading="lazy"
+                @error="onCoverError($event)"
+              />
+              <div class="video-play-overlay">
+                <component :is="icons.Play" class="play-icon" />
+              </div>
+              <div class="video-duration">{{ video.duration }}</div>
+            </div>
+            <div class="video-info">
+              <h4 class="video-title">{{ video.title }}</h4>
+              <p class="video-desc" v-if="video.description">{{ video.description }}</p>
+              <div class="video-meta">
+                <span class="video-author">UP主: {{ video.author }}</span>
+                <span class="video-stats">播放: {{ formatPlayCount(video.play_count) }}</span>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -129,7 +179,7 @@ import {
   Search, Play, Star, Flame, Users, Clock,
   User, ArrowRight, Plus, ChevronLeft, ChevronRight,
   BookOpen, Calculator, FlaskConical, Globe, Code, Music,
-  ArrowDown, Heart
+  ArrowDown, Heart, X
 } from 'lucide-vue-next'
 import { api } from '@/api/client'
 
@@ -137,7 +187,7 @@ const icons = {
   Search, Play, Star, Flame, Users, Clock,
   User, ArrowRight, Plus, ChevronLeft, ChevronRight,
   BookOpen, Calculator, FlaskConical, Globe, Code, Music,
-  ArrowDown, Heart
+  ArrowDown, Heart, X
 }
 
 const categoryTabs = [
@@ -165,13 +215,10 @@ const total = ref(0)
 const loading = ref(false)
 const favoriteMap = ref<Record<string, { isFavorited: boolean; favoriteId: number | null }>>({})
 
-const categoryMap: Record<string, string> = {
-  math: '数学',
-  physics: '物理',
-  chemistry: '化学',
-  english: '英语',
-  programming: '编程'
-}
+// 视频推荐相关
+const showVideoPanel = ref(false)
+const videoLoading = ref(false)
+const matchedVideos = ref<any[]>([])
 
 const colorMap: Record<string, string> = {
   '数学': '#3b82f6',
@@ -179,6 +226,61 @@ const colorMap: Record<string, string> = {
   '化学': '#ef4444',
   '英语': '#f59e0b',
   '编程': '#8b5cf6'
+}
+
+// 开始学习 - 触发视频匹配
+const startLearning = async (course: any) => {
+  course.enrolled = true
+  
+  try {
+    videoLoading.value = true
+    showVideoPanel.value = true
+    matchedVideos.value = []
+    
+    const response = await api.get(`/study-materials/${course.id}/match-videos`)
+    matchedVideos.value = response.data.videos || []
+  } catch (error) {
+    console.error('匹配视频失败:', error)
+    alert('视频匹配失败，请稍后重试')
+  } finally {
+    videoLoading.value = false
+  }
+}
+
+// 关闭视频面板
+const closeVideoPanel = () => {
+  showVideoPanel.value = false
+  matchedVideos.value = []
+}
+
+// 格式化播放数量
+const formatPlayCount = (count: number): string => {
+  if (count >= 10000) {
+    return (count / 10000).toFixed(1) + '万'
+  }
+  return count.toString()
+}
+
+// 通过后端代理加载B站封面图（解决防盗链）
+const getCoverUrl = (coverUrl: string): string => {
+  if (!coverUrl) return ''
+  return `/api/v1/study-materials/image-proxy?url=${encodeURIComponent(coverUrl)}`
+}
+
+// 封面图加载失败时替换为默认图
+const onCoverError = (e: Event) => {
+  const img = e.target as HTMLImageElement
+  img.src = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180"><rect fill="#1e1e2e" width="320" height="180"/><text x="160" y="95" fill="#666" font-size="14" text-anchor="middle" font-family="sans-serif">视频封面</text></svg>'
+  )
+}
+
+// 视频列表滚动加载更多
+const onVideoListScroll = (e: Event) => {
+  const el = e.target as HTMLElement
+  if (el.scrollTop + el.clientHeight >= el.scrollHeight - 20) {
+    // 滚动到底部，可在此扩展加载更多逻辑
+  }
 }
 
 // 从后端加载学习资料
@@ -223,7 +325,7 @@ const loadResources = async () => {
       description: item.content?.substring(0, 50) + '...' || '暂无描述',
       fullContent: item.content,
       category: item.subject,
-      categoryId: Object.entries(categoryMap).find(([k, v]) => v === item.subject)?.[0] || 'math',
+      categoryId: Object.entries(categoryMap).find(([_k, v]) => v === item.subject)?.[0] || 'math',
       coverColor: `linear-gradient(135deg, ${colorMap[item.subject] || '#6366f1'}, ${colorMap[item.subject] || '#6366f1'}dd)`,
       instructor: item.source || '系统',
       instructorColor: colorMap[item.subject] || '#6366f1',
@@ -872,5 +974,246 @@ onMounted(() => {
   padding: 60px 20px;
   color: var(--text-secondary);
   font-size: 14px;
+}
+
+// 视频推荐面板样式
+.video-panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.video-panel {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 1100px;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s ease;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: var(--bg-secondary);
+    }
+
+    .close-icon {
+      width: 20px;
+      height: 20px;
+      color: var(--text-secondary);
+    }
+  }
+}
+
+.video-loading,
+.no-videos {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.video-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+
+    &:hover {
+      background: var(--text-secondary);
+    }
+  }
+}
+
+.video-item {
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid var(--border-color);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  display: block;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    border-color: var(--primary-color);
+  }
+}
+
+.video-play-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0);
+  transition: background 0.3s ease;
+
+  .video-cover-wrapper:hover & {
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  .play-icon {
+    width: 48px;
+    height: 48px;
+    color: white;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s ease;
+
+    .video-cover-wrapper:hover & {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+.video-cover-wrapper {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 原比例 */
+  overflow: hidden;
+  background: var(--bg-secondary);
+
+  .video-cover {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .video-duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    padding: 3px 8px;
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 4px;
+    font-size: 12px;
+    color: white;
+    font-weight: 500;
+    z-index: 1;
+  }
+}
+
+.video-info {
+  padding: 14px 16px;
+
+  .video-title {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .video-desc {
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .video-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .video-author,
+  .video-stats {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 </style>

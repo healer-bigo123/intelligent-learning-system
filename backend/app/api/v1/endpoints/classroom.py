@@ -144,6 +144,17 @@ class QuizResponse(BaseModel):
     created_at: datetime
 
 
+class PPTGenerateResponse(BaseModel):
+    """生成课堂 PPT 响应"""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    title: str
+    type: str
+    content_text: Optional[str] = None
+    created_at: datetime
+
+
 class ClassroomListResponse(BaseModel):
     """课堂列表响应"""
     total: int
@@ -157,7 +168,7 @@ def _generate_code() -> str:
     return str(random.randint(100000, 999999))
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=ClassroomResponse)
 async def create_classroom(
     request: ClassroomCreateRequest,
     user_id: str = Depends(get_current_user_id),
@@ -304,7 +315,7 @@ async def get_classroom(
     }
 
 
-@router.post("/{classroom_id}/votes", status_code=status.HTTP_201_CREATED)
+@router.post("/{classroom_id}/votes", status_code=status.HTTP_201_CREATED, response_model=VoteResponse)
 async def create_vote(
     classroom_id: str,
     request: VoteCreateRequest,
@@ -428,7 +439,7 @@ async def cast_vote(
     return {"message": "投票成功", "results": results}
 
 
-@router.post("/{classroom_id}/lottery", status_code=status.HTTP_201_CREATED)
+@router.post("/{classroom_id}/lottery", status_code=status.HTTP_201_CREATED, response_model=LotteryResponse)
 async def create_lottery(
     classroom_id: str,
     request: LotteryCreateRequest,
@@ -467,7 +478,7 @@ async def create_lottery(
     return lottery
 
 
-@router.post("/{classroom_id}/quizzes", status_code=status.HTTP_201_CREATED)
+@router.post("/{classroom_id}/quizzes", status_code=status.HTTP_201_CREATED, response_model=QuizResponse)
 async def create_quiz(
     classroom_id: str,
     request: QuizCreateRequest,
@@ -585,7 +596,7 @@ async def get_quiz_result(
     }
 
 
-@router.post("/{classroom_id}/ppt", status_code=status.HTTP_201_CREATED)
+@router.post("/{classroom_id}/ppt", status_code=status.HTTP_201_CREATED, response_model=PPTGenerateResponse)
 async def generate_ppt(
     classroom_id: str,
     request: PPTGenerateRequest,

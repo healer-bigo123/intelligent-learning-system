@@ -22,6 +22,53 @@ async def async_client():
 
 
 @pytest.fixture
+async def current_user_id(async_client, auth_token):
+    """获取当前登录用户 ID"""
+    response = await async_client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {auth_token}"},
+    )
+    assert response.status_code == 200
+    return response.json()["id"]
+
+
+@pytest.fixture
+async def second_auth_token(async_client):
+    """注册并登录第二个测试用户，测试结束后自动清理"""
+    import uuid
+    username = f"testuser_{uuid.uuid4().hex[:8]}"
+    password = "123456"
+
+    register_response = await async_client.post(
+        "/api/v1/auth/register",
+        json={"username": username, "password": password},
+    )
+    assert register_response.status_code == 201
+
+    login_response = await async_client.post(
+        "/api/v1/auth/login",
+        json={"username": username, "password": password},
+    )
+    assert login_response.status_code == 200
+    token = login_response.json()["access_token"]
+
+    yield token
+
+    # 清理：删除该测试用户（级联删除相关记录）
+    from app.models.database import SessionLocal, User
+    from sqlalchemy import text
+    db = SessionLocal()
+    try:
+        db.execute(text("PRAGMA foreign_keys = ON"))
+        user = db.query(User).filter(User.username == username).first()
+        if user:
+            db.delete(user)
+            db.commit()
+    finally:
+        db.close()
+
+
+@pytest.fixture
 def test_user():
     """测试用户信息（来自 init_data.py）"""
     return {

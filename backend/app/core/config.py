@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = Field(default="", description="OpenAI API Key")
     OPENAI_BASE_URL: str = Field(default="https://api.openai.com/v1", description="OpenAI Base URL")
     OPENAI_MODEL: str = Field(default="gpt-4o-mini", description="OpenAI 模型ID")
+
+    # 豆包大模型 API
+    DOUBAO_API_KEY: str = Field(default="", description="豆包 API Key")
+    DOUBAO_SECRET_KEY: str = Field(default="", description="豆包 Secret Key")
+    DOUBAO_MODEL: str = Field(default="doubao-seed-2.1-turbo", description="豆包模型ID")
+    DOUBAO_BASE_URL: str = Field(default="https://ark.cn-beijing.volces.com/api/v3", description="豆包 Base URL")
     
     # 数据库配置（默认 SQLite，无需额外安装）
     DATABASE_URL: str = Field(

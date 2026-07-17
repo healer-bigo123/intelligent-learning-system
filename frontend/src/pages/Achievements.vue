@@ -1,5 +1,20 @@
 <template>
   <div class="achievements-page">
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>正在加载成就数据...</p>
+    </div>
+
+    <!-- 空状态 -->
+    <div v-else-if="achievements.length === 0" class="empty-state">
+      <Award class="empty-icon" />
+      <p>暂无成就数据</p>
+      <p class="empty-hint">完成学习任务来解锁成就吧！</p>
+    </div>
+
+    <!-- 正常内容 -->
+    <template v-else>
     <!-- 顶部统计区域 -->
     <div class="stats-grid">
       <div class="stat-card">
@@ -84,16 +99,18 @@
         </div>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import {
   Star, Flame, BookOpen, Target, Clock,
   Award, Lock, Zap, Heart, Share2, Users
 } from 'lucide-vue-next'
 import type { Component } from 'vue'
+import { getAchievements, getMyAchievements, checkAchievements, type AchievementItem } from '@/api/achievements'
 
 const categories = [
   { key: 'all', label: '全部', icon: Star },
@@ -105,109 +122,164 @@ const categories = [
 
 const activeCategory = ref('all')
 
+// 条件类型 → 分类映射
+const conditionTypeToCategory: Record<string, string> = {
+  exercise_count: 'explore',
+  streak_days: 'streak',
+  accuracy: 'learning',
+  material_count: 'learning',
+  login_count: 'learning',
+  study_hours: 'streak',
+  knowledge_mastered: 'explore',
+  full_score: 'learning',
+  share_count: 'social',
+  help_count: 'social',
+  course_completed: 'learning'
+}
+
+// 条件类型 → 图标映射
+const conditionTypeToIcon: Record<string, Component> = {
+  exercise_count: BookOpen,
+  streak_days: Flame,
+  accuracy: Award,
+  material_count: Star,
+  login_count: Award,
+  study_hours: Clock,
+  knowledge_mastered: Target,
+  full_score: Award,
+  share_count: Share2,
+  help_count: Users,
+  course_completed: Star
+}
+
+// 条件类型 → 图标样式类名
+const conditionTypeToIconClass: Record<string, string> = {
+  exercise_count: 'icon-book',
+  streak_days: 'icon-flame',
+  accuracy: 'icon-award',
+  material_count: 'icon-star',
+  login_count: 'icon-trophy',
+  study_hours: 'icon-clock',
+  knowledge_mastered: 'icon-target',
+  full_score: 'icon-award',
+  share_count: 'icon-share',
+  help_count: 'icon-users',
+  course_completed: 'icon-star'
+}
+
+// 条件类型 → 成就点数
+const conditionTypeToPoints: Record<string, number> = {
+  exercise_count: 80,
+  streak_days: 50,
+  accuracy: 60,
+  material_count: 30,
+  login_count: 10,
+  study_hours: 100,
+  knowledge_mastered: 120,
+  full_score: 60,
+  share_count: 30,
+  help_count: 70,
+  course_completed: 200
+}
+
 interface Achievement {
-  id: number
+  id: string
   name: string
   description: string
   points: number
   icon: Component
   iconClass: string
   unlocked: boolean
+  unlocked_at?: string
   category: string
+  condition_type: string
+  condition_value: number
 }
 
-const achievements = ref<Achievement[]>([
-  {
-    id: 1,
-    name: '首次登录',
-    description: '第一次成功登录学习平台，开启学习之旅',
-    points: 10,
-    icon: Award,
-    iconClass: 'icon-trophy',
-    unlocked: true,
-    category: 'learning'
-  },
-  {
-    id: 2,
-    name: '连续学习7天',
-    description: '连续7天保持学习打卡，养成良好习惯',
-    points: 50,
-    icon: Flame,
-    iconClass: 'icon-flame',
-    unlocked: true,
-    category: 'streak'
-  },
-  {
-    id: 3,
-    name: '完成100道题',
-    description: '累计完成100道练习题，知识量稳步提升',
-    points: 80,
-    icon: BookOpen,
-    iconClass: 'icon-book',
-    unlocked: true,
-    category: 'explore'
-  },
-  {
-    id: 4,
-    name: '专注学习10小时',
-    description: '累计专注学习达到10小时，深度学习达人',
-    points: 100,
-    icon: Clock,
-    iconClass: 'icon-clock',
-    unlocked: false,
-    category: 'streak'
-  },
-  {
-    id: 5,
-    name: '掌握50个知识点',
-    description: '成功掌握50个核心知识点，知识体系初步建立',
-    points: 120,
-    icon: Target,
-    iconClass: 'icon-target',
-    unlocked: false,
-    category: 'explore'
-  },
-  {
-    id: 6,
-    name: '获得第一个满分',
-    description: '在某次练习中获得满分，表现优异',
-    points: 60,
-    icon: Award,
-    iconClass: 'icon-award',
-    unlocked: true,
-    category: 'learning'
-  },
-  {
-    id: 7,
-    name: '分享学习笔记',
-    description: '首次分享学习笔记给其他同学，知识传递',
-    points: 30,
-    icon: Share2,
-    iconClass: 'icon-share',
-    unlocked: false,
-    category: 'social'
-  },
-  {
-    id: 8,
-    name: '帮助3位同学',
-    description: '在学习社区中成功帮助3位同学解答问题',
-    points: 70,
-    icon: Users,
-    iconClass: 'icon-users',
-    unlocked: false,
-    category: 'social'
-  },
-  {
-    id: 9,
-    name: '完成所有课程',
-    description: '完成平台上所有课程的学习，全面掌握知识',
-    points: 200,
-    icon: Star,
-    iconClass: 'icon-star',
-    unlocked: false,
-    category: 'learning'
+const achievements = ref<Achievement[]>([])
+const loading = ref(true)
+
+// 条件类型 → 描述后缀
+function getConditionDesc(condition_type: string, condition_value: number): string {
+  const descMap: Record<string, string> = {
+    exercise_count: `累计完成${condition_value}道练习题`,
+    streak_days: `连续学习${condition_value}天`,
+    accuracy: `练习正确率达到${condition_value}%`,
+    material_count: `收藏${condition_value}份学习资料`,
+    login_count: `累计登录${condition_value}次`,
+    study_hours: `累计专注学习${condition_value}小时`,
+    knowledge_mastered: `掌握${condition_value}个知识点`,
+    full_score: `获得${condition_value}次满分`,
+    share_count: `分享${condition_value}次学习笔记`,
+    help_count: `帮助${condition_value}位同学`,
+    course_completed: `完成${condition_value}门课程`
   }
-])
+  return descMap[condition_type] || `达成条件：${condition_value}`
+}
+
+async function loadAchievements() {
+  loading.value = true
+  try {
+    // 并行获取成就列表和已解锁成就
+    const [allRes, myRes] = await Promise.all([
+      getAchievements(),
+      getMyAchievements()
+    ])
+
+    // 尝试检查是否有新解锁的成就
+    try {
+      await checkAchievements()
+      // 重新获取已解锁成就
+      const updatedMyRes = await getMyAchievements()
+      const unlockedIds = new Set(updatedMyRes.items.map(item => item.achievement.id))
+      const unlockedMap = new Map(updatedMyRes.items.map(item => [item.achievement.id, item.unlocked_at]))
+
+      achievements.value = allRes.map(item => {
+        const isUnlocked = unlockedIds.has(item.id)
+        const category = conditionTypeToCategory[item.condition_type] || 'learning'
+        return {
+          id: item.id,
+          name: item.name,
+          description: item.description || getConditionDesc(item.condition_type, item.condition_value),
+          points: conditionTypeToPoints[item.condition_type] || 50,
+          icon: conditionTypeToIcon[item.condition_type] || Star,
+          iconClass: conditionTypeToIconClass[item.condition_type] || 'icon-trophy',
+          unlocked: isUnlocked,
+          unlocked_at: unlockedMap.get(item.id),
+          category,
+          condition_type: item.condition_type,
+          condition_value: item.condition_value
+        }
+      })
+    } catch {
+      // check 失败时使用原始数据
+      const unlockedIds = new Set(myRes.items.map(item => item.achievement.id))
+      const unlockedMap = new Map(myRes.items.map(item => [item.achievement.id, item.unlocked_at]))
+
+      achievements.value = allRes.map(item => {
+        const isUnlocked = unlockedIds.has(item.id)
+        const category = conditionTypeToCategory[item.condition_type] || 'learning'
+        return {
+          id: item.id,
+          name: item.name,
+          description: item.description || getConditionDesc(item.condition_type, item.condition_value),
+          points: conditionTypeToPoints[item.condition_type] || 50,
+          icon: conditionTypeToIcon[item.condition_type] || Star,
+          iconClass: conditionTypeToIconClass[item.condition_type] || 'icon-trophy',
+          unlocked: isUnlocked,
+          unlocked_at: unlockedMap.get(item.id),
+          category,
+          condition_type: item.condition_type,
+          condition_value: item.condition_value
+        }
+      })
+    }
+  } catch (e) {
+    console.error('加载成就数据失败:', e)
+  } finally {
+    loading.value = false
+  }
+}
 
 const stats = computed(() => {
   const total = achievements.value.length
@@ -226,6 +298,10 @@ const completionPercent = computed(() => {
 const filteredAchievements = computed(() => {
   if (activeCategory.value === 'all') return achievements.value
   return achievements.value.filter(a => a.category === activeCategory.value)
+})
+
+onMounted(() => {
+  loadAchievements()
 })
 </script>
 
@@ -393,19 +469,20 @@ const filteredAchievements = computed(() => {
   display: flex;
   flex-direction: column;
   padding: 22px 20px;
-  background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-  border: 1px solid rgba(71, 85, 105, 0.4);
-  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, rgba(40, 54, 71, 0.95), rgba(26, 37, 52, 0.98));
+  border: 2px solid rgba(71, 85, 105, 0.7);
+  border-radius: var(--radius-lg);
   transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   &.unlocked {
-    border-color: rgba(245, 158, 11, 0.3);
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.06);
+    border-color: rgba(245, 158, 11, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 20px rgba(245, 158, 11, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
     &:hover {
       transform: translateY(-3px);
-      box-shadow: 0 0 30px rgba(245, 158, 11, 0.12), 0 8px 20px rgba(0, 0, 0, 0.2);
-      border-color: rgba(245, 158, 11, 0.5);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 30px rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.6);
     }
   }
 
@@ -552,5 +629,58 @@ const filteredAchievements = computed(() => {
       color: rgba(16, 185, 129, 0.9);
     }
   }
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(71, 85, 105, 0.3);
+    border-top-color: rgba(99, 102, 241, 0.8);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  p {
+    font-size: 14px;
+    color: rgba(148, 163, 184, 0.7);
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 12px;
+
+  .empty-icon {
+    width: 48px;
+    height: 48px;
+    color: rgba(148, 163, 184, 0.3);
+  }
+
+  p {
+    font-size: 14px;
+    color: rgba(148, 163, 184, 0.6);
+    margin: 0;
+  }
+
+  .empty-hint {
+    font-size: 13px;
+    color: rgba(148, 163, 184, 0.4);
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

@@ -6,13 +6,16 @@ import uuid
 from datetime import datetime
 from typing import Optional, List
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
 
 from app.models.database import StudyMaterial, get_db
 from app.core.security import get_current_user_id
+from app.core.video_search import video_match_service
 
 router = APIRouter()
 
@@ -82,6 +85,43 @@ class StudyMaterialStatsResponse(BaseModel):
 
 
 # ========== 接口实现 ==========
+
+# ========== 图片代理接口（必须在 /{material_id} 之前） ==========
+
+@router.get("/image-proxy")
+async def image_proxy(url: str = Query(..., description="图片URL")):
+    """
+    图片代理接口 - 解决B站图片防盗链问题
+    前端通过此接口加载B站封面图，后端添加正确的Referer头
+    无需认证（img标签无法设置Authorization头）
+    """
+    if not url.startswith(("http://", "https://")):
+        raise HTTPException(status_code=400, detail="无效的URL")
+
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": "https://www.bilibili.com",
+        }
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(url, headers=headers)
+            response.raise_for_status()
+
+            content_type = response.headers.get("content-type", "image/jpeg")
+
+            return StreamingResponse(
+                response.content,
+                media_type=content_type,
+                headers={
+                    "Cache-Control": "public, max-age=86400",
+                }
+            )
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"图片加载失败: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"代理错误: {str(e)}")
+
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=StudyMaterialResponse)
 async def create_study_material(
@@ -316,3 +356,48 @@ async def get_filter_options(
         "material_types": sorted(types),
         "tags": sorted(list(all_tags)),
     }
+
+
+@router.get("/{material_id}/match-videos")
+async def match_videos_for_material(
+    material_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    """
+    根据学习资料智能匹配相关视频
+    
+    根据资料的标题、学科、知识点、标签等信息，
+    自动从 B 站搜索并匹配相关的教学视频
+    """
+    material = db.query(StudyMaterial).filter(
+        StudyMaterial.id == material_id,
+        StudyMaterial.status == "active"
+    ).first()
+    
+    if not material:
+        raise HTTPException(status_code=404, detail="资料不存在")
+    
+    # 构建资料信息字典
+    material_dict = {
+        "title": material.title,
+        "content": material.content,
+        "subject": material.subject,
+        "knowledge_point": material.knowledge_point,
+        "tags": material.tags,
+    }
+    
+    # 调用视频匹配服务
+    try:
+        videos = await video_match_service.match_videos(material_dict, max_results=10)
+        return {
+            "videos": videos,
+            "total": len(videos),
+            "material_id": material_id,
+            "material_title": material.title
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"视频匹配失败: {str(e)}"
+        )

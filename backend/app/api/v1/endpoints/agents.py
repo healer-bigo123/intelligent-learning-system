@@ -19,8 +19,9 @@ from app.core.agent_system import (
     Task,
     TaskStatus,
     SessionState,
-    AgentType
+    AgentType,
 )
+import app.core.agent_system as _agent_system
 
 router = APIRouter()
 
@@ -102,12 +103,167 @@ class SessionInfo(BaseModel):
     created_at: datetime
     last_active_at: datetime
 
+# ================ 模型管理（必须在 /{agent_id} 之前定义） ================
+
+AVAILABLE_MODELS = [
+    {
+        "id": "spark-3.5",
+        "name": "讯飞星火 3.5",
+        "provider": "xinghuo",
+        "description": "科大讯飞星火大模型，中文理解能力强",
+        "available": True,
+        "max_tokens": 8192
+    },
+    {
+        "id": "deepseek-v3-2-251201",
+        "name": "DeepSeek V3",
+        "provider": "volces",
+        "description": "深度求索大模型，推理能力强",
+        "available": True,
+        "max_tokens": 64000
+    },
+    {
+        "id": "gpt-4",
+        "name": "GPT-4",
+        "provider": "openai",
+        "description": "OpenAI旗舰模型，理解能力强",
+        "available": True,
+        "max_tokens": 8192
+    },
+    {
+        "id": "qwen-turbo",
+        "name": "通义千问 Turbo",
+        "provider": "qwen",
+        "description": "阿里云通义千问，响应速度快",
+        "available": True,
+        "max_tokens": 8192
+    },
+    {
+        "id": "ernie-4.0",
+        "name": "文心一言 4.0",
+        "provider": "ernie",
+        "description": "百度文心一言，中文理解强",
+        "available": True,
+        "max_tokens": 4096
+    },
+    {
+        "id": "doubao-pro",
+        "name": "豆包 Pro",
+        "provider": "doubao",
+        "description": "字节跳动豆包模型，对话流畅",
+        "available": True,
+        "max_tokens": 4096
+    }
+]
+
+CURRENT_MODEL = {"id": "spark-3.5"}
+
+@router.get("/models", summary="获取可用模型列表")
+async def get_available_models():
+    """获取所有可用的大模型列表"""
+    return {
+        "models": AVAILABLE_MODELS,
+        "current_model": CURRENT_MODEL["id"]
+    }
+
+@router.post("/model/select", summary="选择当前使用的模型")
+async def select_model(request: dict):
+    """选择当前使用的大模型"""
+    model_id = request.get("model_id")
+    
+    if not model_id:
+        raise HTTPException(status_code=400, detail="缺少 model_id 参数")
+    
+    model = next((m for m in AVAILABLE_MODELS if m["id"] == model_id), None)
+    if not model:
+        raise HTTPException(status_code=404, detail=f"模型 {model_id} 不存在")
+    
+    try:
+        from app.core.llm_client import create_llm_client, ModelProvider
+        from app.core.config import settings
+        
+        provider_config = {
+            "spark-3.5": {"provider": "xinghuo", "model": settings.XINGHUO_MODEL or "spark-3.5"},
+            "deepseek-v3-2-251201": {"provider": "volces", "model": settings.VOLCES_MODEL or "deepseek-v3-2-251201"},
+            "gpt-4": {"provider": "openai", "model": settings.OPENAI_MODEL or "gpt-4"},
+            "qwen-turbo": {"provider": "qwen", "model": "qwen-turbo"},
+            "ernie-4.0": {"provider": "ernie", "model": "ernie-4.0"},
+            "doubao-pro": {"provider": "doubao", "model": settings.DOUBAO_MODEL or "doubao-seed-2-1-turbo-260628"}
+        }
+        
+        config = provider_config.get(model_id, {})
+        if config:
+            provider = config["provider"]
+            
+            if provider == "doubao":
+                # 豆包和 DeepSeek 都在火山方舟平台，优先使用 VOLCES_API_KEY
+                doubao_api_key = settings.VOLCES_API_KEY or settings.DOUBAO_API_KEY
+                new_client = create_llm_client(
+                    provider="doubao",
+                    api_key=doubao_api_key,
+                    secret_key=settings.DOUBAO_SECRET_KEY,
+                    model_name=config["model"],
+                    base_url=settings.DOUBAO_BASE_URL,
+                    temperature=0.3,
+                    max_tokens=1024
+                )
+            elif provider == "xinghuo":
+                # 使用 HTTP OpenAI 兼容接口，使用 XINGHUO_API_KEY 进行 Bearer 认证
+                spark_api_key = settings.XINGHUO_API_KEY
+                new_client = create_llm_client(
+                    provider="xinghuo",
+                    api_key=spark_api_key,
+                    secret_key=settings.XINGHUO_API_SECRET,
+                    model_name=config["model"],
+                    base_url=settings.XINGHUO_BASE_URL,
+                    temperature=0.3,
+                    max_tokens=1024
+                )
+            elif provider == "openai":
+                new_client = create_llm_client(
+                    provider="openai",
+                    api_key=settings.OPENAI_API_KEY,
+                    model_name=config["model"],
+                    base_url=settings.OPENAI_BASE_URL,
+                    temperature=0.3,
+                    max_tokens=1024
+                )
+            elif provider == "volces":
+                new_client = create_llm_client(
+                    provider="volces",
+                    api_key=settings.VOLCES_API_KEY,
+                    model_name=config["model"],
+                    base_url=settings.VOLCES_BASE_URL,
+                    temperature=0.3,
+                    max_tokens=1024
+                )
+            else:
+                new_client = create_llm_client(
+                    provider=provider,
+                    api_key=settings.OPENAI_API_KEY,
+                    model_name=config["model"],
+                    temperature=0.3,
+                    max_tokens=1024
+                )
+            
+            _agent_system.llm_client = new_client
+            _agent_system.LLM_AVAILABLE = True
+        
+        CURRENT_MODEL["id"] = model_id
+        
+        return {
+            "message": f"已切换到 {model['name']}",
+            "current_model": model_id
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"模型切换失败: {str(e)}")
+
 # ================ 原有API（保留并增强） ================
 
 @router.get("/")
 async def list_agents():
     """获取所有已注册的智能体列表"""
-    # 合并原有智能体和新调度系统的智能体
     new_agents = list_all_agents()
     combined = REGISTERED_AGENTS.copy()
     
@@ -130,10 +286,8 @@ async def list_agents():
 @router.get("/{agent_id}")
 async def get_agent(agent_id: str):
     """获取指定智能体详情"""
-    # 先查找原有注册表
     agent = next((a for a in REGISTERED_AGENTS if a["id"] == agent_id), None)
     
-    # 如果没找到，查找新调度系统
     if not agent:
         new_agent = agent_scheduler.get_agent(agent_id)
         if new_agent:
@@ -155,7 +309,6 @@ async def dispatch_task(request: AgentTaskRequest):
     agent = next((a for a in REGISTERED_AGENTS if a["id"] == request.agent_id), None)
     
     if not agent:
-        # 尝试在新调度系统中查找
         new_agent = agent_scheduler.get_agent(request.agent_id)
         if not new_agent:
             return {"error": f"智能体 {request.agent_id} 不存在"}
@@ -164,7 +317,6 @@ async def dispatch_task(request: AgentTaskRequest):
     if agent["status"] != "active":
         return {"error": f"智能体 {request.agent_id} 当前不可用"}
     
-    # 使用新调度系统执行任务
     try:
         result = await ask_agent(
             f"{request.task_type}: {str(request.parameters)}",
@@ -188,7 +340,6 @@ async def dispatch_task(request: AgentTaskRequest):
 @router.get("/task/{task_id}")
 async def get_task_status(task_id: str):
     """查询任务状态"""
-    # 遍历所有会话查找任务
     for session in agent_scheduler.state_manager.sessions.values():
         for task in session.tasks:
             if task.id == task_id:
@@ -203,7 +354,6 @@ async def get_task_status(task_id: str):
                     updated_at=task.updated_at
                 )
     
-    # 模拟旧系统的任务状态
     return {
         "task_id": task_id,
         "status": "completed",
@@ -214,13 +364,7 @@ async def get_task_status(task_id: str):
 
 @router.post("/query", response_model=QueryResponse, summary="向智能体调度中心发送请求")
 async def query_agent(request: QueryRequest):
-    """
-    向智能体调度中心发送用户请求，自动识别意图并分配最佳智能体处理
-    
-    - **user_input**: 用户输入的自然语言查询
-    - **user_id**: 用户唯一标识符
-    - **session_id**: 可选的会话ID，用于保持对话上下文
-    """
+    """向智能体调度中心发送用户请求，自动识别意图并分配最佳智能体处理"""
     try:
         result = await ask_agent(request.user_input, request.user_id, request.session_id)
         return QueryResponse(
@@ -237,11 +381,7 @@ async def query_agent(request: QueryRequest):
 
 @router.post("/sessions", response_model=SessionInfo, summary="创建新会话")
 async def create_session(user_id: str):
-    """
-    创建新的用户会话
-    
-    - **user_id**: 用户唯一标识符
-    """
+    """创建新的用户会话"""
     session = agent_scheduler.state_manager.create_session(user_id)
     return SessionInfo(
         session_id=session.session_id,
@@ -254,11 +394,7 @@ async def create_session(user_id: str):
 
 @router.get("/sessions/{session_id}", response_model=SessionInfo, summary="获取会话信息")
 async def get_session(session_id: str):
-    """
-    获取指定会话的详细信息
-    
-    - **session_id**: 会话ID
-    """
+    """获取指定会话的详细信息"""
     session = agent_scheduler.state_manager.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail=f"会话 {session_id} 不存在")
@@ -274,11 +410,7 @@ async def get_session(session_id: str):
 
 @router.delete("/sessions/{session_id}", summary="关闭会话")
 async def close_session(session_id: str):
-    """
-    关闭指定会话，释放相关资源
-    
-    - **session_id**: 会话ID
-    """
+    """关闭指定会话，释放相关资源"""
     session = agent_scheduler.state_manager.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail=f"会话 {session_id} 不存在")
@@ -290,11 +422,7 @@ async def close_session(session_id: str):
 
 @router.get("/sessions/{session_id}/tasks", response_model=List[TaskInfo], summary="获取会话中的任务列表")
 async def get_session_tasks(session_id: str):
-    """
-    获取指定会话中的所有任务
-    
-    - **session_id**: 会话ID
-    """
+    """获取指定会话中的所有任务"""
     session = agent_scheduler.state_manager.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail=f"会话 {session_id} 不存在")
@@ -317,13 +445,7 @@ async def get_session_tasks(session_id: str):
 
 @router.post("/intent/recognize", summary="识别用户意图")
 async def recognize_intent(user_input: str, session_id: Optional[str] = None, user_id: Optional[str] = None):
-    """
-    单独调用意图识别器
-    
-    - **user_input**: 用户输入的自然语言
-    - **session_id**: 可选的会话ID
-    - **user_id**: 可选的用户ID
-    """
+    """单独调用意图识别器"""
     try:
         context = {}
         if session_id and user_id:
@@ -348,45 +470,25 @@ async def recognize_intent(user_input: str, session_id: Optional[str] = None, us
 
 @router.post("/memory/short-term", summary="添加短期记忆")
 async def add_short_term_memory(session_id: str, content: Dict[str, Any]):
-    """
-    向指定会话添加短期记忆
-    
-    - **session_id**: 会话ID
-    - **content**: 记忆内容
-    """
+    """向指定会话添加短期记忆"""
     agent_scheduler.memory_retriever.add_short_term_memory(session_id, content)
     return {"message": "短期记忆添加成功"}
 
 @router.get("/memory/short-term/{session_id}", summary="获取短期记忆")
 async def get_short_term_memory(session_id: str):
-    """
-    获取指定会话的短期记忆
-    
-    - **session_id**: 会话ID
-    """
+    """获取指定会话的短期记忆"""
     memory = agent_scheduler.memory_retriever.get_short_term_memory(session_id)
     return {"session_id": session_id, "memory": memory}
 
 @router.post("/memory/long-term", summary="添加长期记忆")
 async def add_long_term_memory(user_id: str, key: str, value: Any):
-    """
-    向指定用户添加长期记忆
-    
-    - **user_id**: 用户ID
-    - **key**: 记忆键
-    - **value**: 记忆值
-    """
+    """向指定用户添加长期记忆"""
     agent_scheduler.memory_retriever.add_long_term_memory(user_id, key, value)
     return {"message": "长期记忆添加成功"}
 
 @router.get("/memory/long-term/{user_id}", summary="获取长期记忆")
 async def get_long_term_memory(user_id: str, key: Optional[str] = None):
-    """
-    获取指定用户的长期记忆
-    
-    - **user_id**: 用户ID
-    - **key**: 可选的记忆键，不指定则返回所有
-    """
+    """获取指定用户的长期记忆"""
     memory = agent_scheduler.memory_retriever.get_long_term_memory(user_id, key)
     return {"user_id": user_id, "memory": memory}
 
@@ -394,9 +496,7 @@ async def get_long_term_memory(user_id: str, key: Optional[str] = None):
 
 @router.get("/health", summary="智能体系统健康检查")
 async def health_check():
-    """
-    检查智能体系统是否正常运行
-    """
+    """检查智能体系统是否正常运行"""
     return {
         "status": "healthy",
         "agents_count": len(agent_scheduler.agents),

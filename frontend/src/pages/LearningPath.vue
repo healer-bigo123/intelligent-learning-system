@@ -313,16 +313,6 @@ interface SubjectInfo {
   mapHeight: number
 }
 
-const courseOptions = [
-  { id: 'math-1', name: '高中数学', subject: 'math', grade: 'grade10' },
-  { id: 'math-2', name: '高中数学（下）', subject: 'math', grade: 'grade11' },
-  { id: 'physics-1', name: '高中物理', subject: 'physics', grade: 'grade10' },
-  { id: 'physics-2', name: '高中物理（电磁）', subject: 'physics', grade: 'grade11' },
-  { id: 'prog-1', name: 'Python编程', subject: 'programming', grade: 'grade10' },
-  { id: 'eng-1', name: '高中英语', subject: 'english', grade: 'grade10' },
-  { id: 'eng-2', name: '英语进阶', subject: 'english', grade: 'grade11' }
-]
-
 // 生成蜿蜒路径坐标（百分比）
 function generateSnakePath(count: number): { x: number; y: number }[] {
   const positions: { x: number; y: number }[] = []
@@ -457,22 +447,6 @@ const stats = computed(() => {
     locked += s.nodes.filter(n => n.status === 'locked').length
   })
   return { total, unlocked, locked }
-})
-
-const totalProgress = computed(() => {
-  const all = visibleSubjects.value
-  if (all.length === 0) return 0
-  const total = all.reduce((sum, s) => sum + s.nodes.length, 0)
-  if (total === 0) return 0
-  const unlocked = all.reduce((sum, s) => sum + s.nodes.filter(n => n.status === 'unlocked').length, 0)
-  return Math.round((unlocked / total) * 100)
-})
-
-const filteredCourseOptions = computed(() => {
-  return courseOptions.filter(c => {
-    if (activeGrade.value !== 'all' && c.grade !== activeGrade.value) return false
-    return true
-  })
 })
 
 // 生成 SVG 路径（使用百分比坐标）

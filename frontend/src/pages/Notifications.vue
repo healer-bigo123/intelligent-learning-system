@@ -1,5 +1,12 @@
 <template>
   <div class="notifications">
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>正在加载通知...</p>
+    </div>
+
+    <template v-else>
     <!-- 顶部统计栏 -->
     <div class="stats-bar">
       <div class="stat-item">
@@ -27,7 +34,7 @@
         :key="tab.value"
         class="tab-btn"
         :class="{ active: activeTab === tab.value }"
-        @click="activeTab = tab.value"
+        @click="onTabChange(tab.value)"
       >
         {{ tab.label }}
         <span class="tab-badge" v-if="tab.value === 'unread' && unreadCount > 0">
@@ -66,6 +73,13 @@
           </div>
         </div>
       </div>
+
+      <!-- 加载更多 -->
+      <div v-if="hasMore" class="load-more">
+        <button @click="loadMore" :disabled="loadingMore">
+          {{ loadingMore ? '加载中...' : '加载更多' }}
+        </button>
+      </div>
     </div>
 
     <!-- 空状态 -->
@@ -73,19 +87,21 @@
       <component :is="icons.Bell" class="empty-icon" />
       <p class="empty-text">暂无{{ activeTab === 'all' ? '' : activeTab === 'unread' ? '未读' : '已读' }}通知</p>
     </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Bell, CheckCircle, BookOpen, Award, FileText, Settings, CheckSquare } from 'lucide-vue-next'
+import { getNotifications, getUnreadCount, markAsRead as markAsReadApi, markAllAsRead as markAllAsReadApi, type NotificationItem } from '@/api/notifications'
 
 const icons = { Bell, CheckCircle, BookOpen, Award, FileText, Settings, CheckSquare }
 
-type NotificationType = 'system' | 'course' | 'achievement' | 'homework'
+type NotificationType = 'system' | 'course' | 'achievement' | 'homework' | 'exercise' | 'reminder' | 'update'
 
 interface Notification {
-  id: number
+  id: string
   type: NotificationType
   title: string
   description: string
@@ -94,14 +110,17 @@ interface Notification {
   createdAt: Date
 }
 
-const typeIconMap: Record<NotificationType, any> = {
+const typeIconMap: Record<string, any> = {
   system: Settings,
   course: BookOpen,
   achievement: Award,
-  homework: FileText
+  homework: FileText,
+  exercise: CheckCircle,
+  reminder: Bell,
+  update: FileText
 }
 
-const getTypeIcon = (type: NotificationType) => typeIconMap[type]
+const getTypeIcon = (type: string) => typeIconMap[type] || Bell
 
 const tabs: { label: string; value: 'all' | 'unread' | 'read' }[] = [
   { label: '全部', value: 'all' },
@@ -110,124 +129,140 @@ const tabs: { label: string; value: 'all' | 'unread' | 'read' }[] = [
 ]
 
 const activeTab = ref<'all' | 'unread' | 'read'>('all')
-
-const now = new Date()
-const minutesAgo = (m: number) => new Date(now.getTime() - m * 60 * 1000)
-
-const notifications = ref<Notification[]>([
-  {
-    id: 1,
-    type: 'achievement',
-    title: '🎉 成就解锁：连续学习 7 天',
-    description: '恭喜！你已连续学习 7 天，超越了 85% 的用户，继续加油！',
-    timeAgo: '5分钟前',
-    read: false,
-    createdAt: minutesAgo(5)
-  },
-  {
-    id: 2,
-    type: 'homework',
-    title: '作业提醒：高等数学期中测验',
-    description: '《高等数学》期中测验将于明天 9:00 开始，请提前做好准备。',
-    timeAgo: '30分钟前',
-    read: false,
-    createdAt: minutesAgo(30)
-  },
-  {
-    id: 3,
-    type: 'course',
-    title: '课程更新：Python 进阶编程 第8章',
-    description: '你关注的《Python 进阶编程》已更新第8章「装饰器与元类」，快来学习吧。',
-    timeAgo: '1小时前',
-    read: false,
-    createdAt: minutesAgo(60)
-  },
-  {
-    id: 4,
-    type: 'system',
-    title: '系统维护通知',
-    description: '平台将于本周六凌晨 2:00-4:00 进行系统维护升级，届时部分功能可能暂时不可用。',
-    timeAgo: '2小时前',
-    read: false,
-    createdAt: minutesAgo(120)
-  },
-  {
-    id: 5,
-    type: 'course',
-    title: '直播提醒：AI 辅导答疑课',
-    description: '今晚 20:00 有一场 AI 辅导答疑直播课，主讲老师将在线解答你的疑问。',
-    timeAgo: '3小时前',
-    read: true,
-    createdAt: minutesAgo(180)
-  },
-  {
-    id: 6,
-    type: 'achievement',
-    title: '🏆 成就解锁：完成 100 道练习',
-    description: '太棒了！你已累计完成 100 道练习题，学习进度超越 90% 的同学。',
-    timeAgo: '昨天 18:30',
-    read: true,
-    createdAt: minutesAgo(60 * 18)
-  },
-  {
-    id: 7,
-    type: 'homework',
-    title: '作业批改完成：线性代数第三章',
-    description: '你提交的《线性代数》第三章作业已批改完成，得分 92 分，点击查看详细反馈。',
-    timeAgo: '昨天 14:20',
-    read: true,
-    createdAt: minutesAgo(60 * 22)
-  },
-  {
-    id: 8,
-    type: 'system',
-    title: '新功能上线：智能错题本',
-    description: '我们上线了全新的智能错题本功能，系统会自动收集你的错题并生成针对性练习。',
-    timeAgo: '昨天 10:00',
-    read: true,
-    createdAt: minutesAgo(60 * 26)
-  },
-  {
-    id: 9,
-    type: 'course',
-    title: '课程推荐：机器学习入门',
-    description: '根据你的学习记录，我们推荐你学习《机器学习入门》课程，适合你的当前水平。',
-    timeAgo: '3天前',
-    read: true,
-    createdAt: minutesAgo(60 * 24 * 3)
-  },
-  {
-    id: 10,
-    type: 'achievement',
-    title: '⭐ 成就解锁：本周学习之星',
-    description: '你本周累计学习时长达到 20 小时，荣获「本周学习之星」称号！',
-    timeAgo: '5天前',
-    read: true,
-    createdAt: minutesAgo(60 * 24 * 5)
-  }
-])
-
-const unreadCount = computed(() => notifications.value.filter(n => !n.read).length)
+const loading = ref(true)
+const notifications = ref<Notification[]>([])
+const unreadCount = ref(0)
 const readCount = computed(() => notifications.value.filter(n => n.read).length)
 
-const filteredNotifications = computed(() => {
-  if (activeTab.value === 'unread') return notifications.value.filter(n => !n.read)
-  if (activeTab.value === 'read') return notifications.value.filter(n => n.read)
-  return notifications.value
-})
+// 分页
+const page = ref(1)
+const pageSize = 20
+const hasMore = ref(true)
+const loadingMore = ref(false)
 
+// 计算相对时间
+function getTimeAgo(dateStr: string): string {
+  const now = new Date()
+  const date = new Date(dateStr)
+  const diff = now.getTime() - date.getTime()
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return `${minutes}分钟前`
+  if (hours < 24) return `${hours}小时前`
+  if (days < 30) return `${days}天前`
+  return date.toLocaleDateString('zh-CN')
+}
+
+// 加载通知列表
+async function loadNotifications(isAppend = false) {
+  if (isAppend) {
+    loadingMore.value = true
+  } else {
+    loading.value = true
+  }
+
+  try {
+    const params: { page: number; page_size: number; is_read?: boolean } = {
+      page: isAppend ? page.value : 1,
+      page_size: pageSize
+    }
+
+    if (activeTab.value === 'unread') params.is_read = false
+    else if (activeTab.value === 'read') params.is_read = true
+
+    const res = await getNotifications(params)
+
+    const newNotifications: Notification[] = res.items.map(item => ({
+      id: item.id,
+      type: item.type as NotificationType,
+      title: item.title,
+      description: item.content,
+      timeAgo: getTimeAgo(item.created_at),
+      read: item.is_read,
+      createdAt: new Date(item.created_at)
+    }))
+
+    if (isAppend) {
+      notifications.value = [...notifications.value, ...newNotifications]
+    } else {
+      notifications.value = newNotifications
+    }
+
+    hasMore.value = notifications.value.length < res.total
+    if (isAppend) page.value++
+  } catch (e) {
+    console.error('加载通知失败:', e)
+  } finally {
+    loading.value = false
+    loadingMore.value = false
+  }
+}
+
+// 加载未读数
+async function loadUnreadCount() {
+  try {
+    const res = await getUnreadCount()
+    unreadCount.value = res.count
+  } catch (e) {
+    console.error('加载未读数失败:', e)
+  }
+}
+
+// 标记单条已读
+const markAsRead = async (item: Notification) => {
+  if (item.read) return
+  try {
+    await markAsReadApi(item.id)
+    item.read = true
+    unreadCount.value = Math.max(0, unreadCount.value - 1)
+  } catch (e) {
+    console.error('标记已读失败:', e)
+  }
+}
+
+// 全部标为已读
+const markAllAsRead = async () => {
+  try {
+    await markAllAsReadApi()
+    notifications.value.forEach(n => { n.read = true })
+    unreadCount.value = 0
+  } catch (e) {
+    console.error('全部标为已读失败:', e)
+  }
+}
+
+// 加载更多
+const loadMore = () => {
+  if (!loadingMore.value && hasMore.value) {
+    loadNotifications(true)
+  }
+}
+
+// Tab切换时重新加载
+const onTabChange = (tab: 'all' | 'unread' | 'read') => {
+  activeTab.value = tab
+  page.value = 1
+  notifications.value = []
+  loadNotifications()
+}
+
+// 日期分组
 interface NotificationGroup {
   label: string
   items: Notification[]
 }
 
 const filteredGroups = computed<NotificationGroup[]>(() => {
+  const now = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
   const yesterdayStart = todayStart - 86400000
 
   const groups: Record<string, Notification[]> = {}
 
-  filteredNotifications.value.forEach(item => {
+  notifications.value.forEach(item => {
     const ts = item.createdAt.getTime()
     let label: string
     if (ts >= todayStart) {
@@ -248,13 +283,10 @@ const filteredGroups = computed<NotificationGroup[]>(() => {
   }))
 })
 
-const markAsRead = (item: Notification) => {
-  item.read = true
-}
-
-const markAllAsRead = () => {
-  notifications.value.forEach(n => { n.read = true })
-}
+onMounted(() => {
+  loadNotifications()
+  loadUnreadCount()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -541,5 +573,62 @@ const markAllAsRead = () => {
 .empty-text {
   font-size: 14px;
   color: var(--text-muted, #6b7280);
+}
+
+// 加载状态
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  gap: 16px;
+
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(71, 85, 105, 0.3);
+    border-top-color: rgba(99, 102, 241, 0.8);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  p {
+    font-size: 14px;
+    color: var(--text-muted, #6b7280);
+  }
+}
+
+// 加载更多
+.load-more {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+
+  button {
+    padding: 10px 32px;
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: var(--radius-md, 12px);
+    color: var(--primary-color, #6366f1);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s ease;
+
+    &:hover:not(:disabled) {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: rgba(99, 102, 241, 0.5);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

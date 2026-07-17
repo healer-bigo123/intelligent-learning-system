@@ -1,0 +1,13 @@
+status: 200
+content-type: application/json; charset=utf-8
+body first 500: {"code":0,"message":"OK","ttl":1,"data":{"seid":"16966381046428191990","page":1,"pagesize":2,"numResults":1000,"numPages":500,"suggest_keyword":"","rqt_type":"search","exp_list":{"100010":true,"5500":true,"6699":true},"is_hit_web_inf":false,"egg_hit":0,"result":[{"type":"video","id":116901208397383,"author":"一数","mid":14229967,"typeid":"208","typename":"校园学习","arcurl":"http://www.bilibili.com/video/av116901208397383","aid":116901208397383,"bvid":"BV1QeNc6iE84","title":"【高一\u003cem class=\"keywor
+code: 0
+results count: 2
+title: 【高一<em class="keyword">数学</em>】必修一零基础讲解！从零开始拯救学渣！
+pic: //i0.hdslb.com/bfs/archive/2b0bd72359e4e129f0ad3452fb37b6befc08e064.jpg
+full: https://i0.hdslb.com/bfs/archive/2b0bd72359e4e129f0ad3452fb37b6befc08e064.jpg
+---
+title: 高中<em class="keyword">数学</em>基础与解法全集（涵盖所有）|长期更新|从零开始拯救所有学渣！2025年新视频持续更新中！|涵盖新教材必
+pic: //i2.hdslb.com/bfs/archive/8c963f3eef8a75aef37807da987b2b6805863821.jpg
+full: https://i2.hdslb.com/bfs/archive/8c963f3eef8a75aef37807da987b2b6805863821.jpg
+---

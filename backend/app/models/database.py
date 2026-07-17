@@ -11,7 +11,12 @@ Chroma 向量数据库同时作为文档/知识存储
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, Text, Float, Boolean, ForeignKey, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+def utc_now():
+    """返回带时区信息的 UTC 当前时间"""
+    return datetime.now(timezone.utc)
 
 from app.core.config import settings
 
@@ -63,8 +68,8 @@ class StudentProfile(Base):
     # 兴趣标签
     interests = Column(Text, default="")
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     # 外键关联 - 一对一关系
     user = relationship("User", back_populates="profile", uselist=False)
@@ -77,8 +82,8 @@ class ChatSession(Base):
     id = Column(String(64), primary_key=True, index=True)
     user_id = Column(String(64), ForeignKey("users.id", ondelete="CASCADE"), index=True)
     title = Column(String(200), default="新对话")
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     # 外键关联
     user = relationship("User", back_populates="chat_sessions")
@@ -94,7 +99,7 @@ class ChatMessage(Base):
     role = Column(String(20))  # user / assistant
     content = Column(Text)
     use_rag = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     # 外键关联
     session = relationship("ChatSession", back_populates="messages")
@@ -116,7 +121,7 @@ class LearningResource(Base):
     generated_by = Column(String(50), nullable=True)  # 生成该资源的智能体 ID
     user_id = Column(String(64), ForeignKey("users.id", ondelete="CASCADE"), index=True)
     rating = Column(Float, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     # 外键关联
     user = relationship("User", back_populates="learning_resources")
@@ -132,8 +137,8 @@ class LearningPath(Base):
     description = Column(Text, nullable=True)
     steps = Column(Text, default="")  # JSON 字符串存储步骤列表
     status = Column(String(20), default="active", index=True)  # active / completed / paused
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     # 外键关联
     user = relationship("User", back_populates="learning_paths")
@@ -151,7 +156,7 @@ class AgentTask(Base):
     status = Column(String(20), default="queued", index=True)  # queued / running / completed / failed
     result = Column(Text, nullable=True)
     error = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
     completed_at = Column(DateTime, nullable=True)
 
     # 外键关联
@@ -174,8 +179,8 @@ class User(Base):
     role = Column(String(20), default="student", index=True)  # student / teacher / admin
     status = Column(String(20), default="active", index=True)  # active / inactive / banned
     last_login_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now, index=True)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     # 关系定义
     profile = relationship("StudentProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
@@ -200,7 +205,7 @@ class UserRole(Base):
     user_id = Column(String(64), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     role = Column(String(20), index=True, nullable=False)  # student / teacher / admin
     permissions = Column(Text, default="")  # JSON 字符串存储权限列表
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
 
 # ========== 错题题库模块（后端 2.0 P0）==========
@@ -223,8 +228,8 @@ class Mistake(Base):
     status = Column(String(20), default="unsolved", index=True)  # unsolved / reviewing / mastered
     review_count = Column(Integer, default=0)  # 复习次数
     last_review_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now, index=True)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     # 外键关联
     user = relationship("User", back_populates="mistakes")
@@ -248,7 +253,7 @@ class Exercise(Base):
     difficulty = Column(Integer, default=3, index=True)
     source = Column(String(50), default="manual", index=True)  # manual / ai_generated
     status = Column(String(20), default="active", index=True)  # active / archived
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utc_now, index=True)
 
     # 外键关联
     user = relationship("User", back_populates="exercises")
@@ -266,7 +271,7 @@ class ExerciseRecord(Base):
     is_correct = Column(Boolean, default=False, index=True)
     score = Column(Integer, default=0)  # 得分（百分比）
     time_spent = Column(Integer, default=0)  # 耗时（秒）
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utc_now, index=True)
 
     # 外键关联
     user = relationship("User", back_populates="exercise_records")
@@ -286,7 +291,7 @@ class ExerciseSession(Base):
     correct_count = Column(Integer, default=0)
     score = Column(Integer, default=0)  # 总分（百分比）
     status = Column(String(20), default="in_progress", index=True)  # in_progress / completed
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utc_now, index=True)
     completed_at = Column(DateTime, nullable=True)
 
     # 外键关联
@@ -300,7 +305,7 @@ class AssessmentReport(Base):
     id = Column(String(64), primary_key=True, index=True)
     user_id = Column(String(64), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utc_now, index=True)
 
 
 class MindMap(Base):
@@ -313,8 +318,8 @@ class MindMap(Base):
     subject = Column(String(100), index=True, nullable=False)
     content = Column(Text, default="{}")  # JSON 字符串存储思维导图数据
     status = Column(String(20), default="active", index=True)  # active / archived
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now, index=True)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
 
 # ========== 课堂互动模块 ==========
@@ -329,8 +334,8 @@ class Classroom(Base):
     description = Column(Text, nullable=True)
     teacher_id = Column(String(64), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     status = Column(String(20), default="active", index=True)  # active / closed
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now, index=True)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     # 关系定义
     teacher = relationship("User")
@@ -348,7 +353,7 @@ class ClassroomMember(Base):
     classroom_id = Column(String(64), ForeignKey("classrooms.id", ondelete="CASCADE"), index=True, nullable=False)
     user_id = Column(String(64), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     role = Column(String(20), default="student", index=True)  # teacher / student
-    joined_at = Column(DateTime, default=datetime.utcnow, index=True)
+    joined_at = Column(DateTime, default=utc_now, index=True)
 
     # 外键关联
     classroom = relationship("Classroom", back_populates="members")
@@ -370,7 +375,7 @@ class Vote(Base):
     options = Column(Text, default="[]")  # JSON 字符串，选项列表
     results = Column(Text, default="{}")  # JSON 字符串，投票结果统计
     status = Column(String(20), default="active", index=True)  # active / ended
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utc_now, index=True)
     ended_at = Column(DateTime, nullable=True)
 
     # 外键关联
@@ -386,7 +391,7 @@ class Lottery(Base):
     title = Column(String(200), nullable=False)
     candidates = Column(Text, default="[]")  # JSON 字符串，候选人列表
     winner = Column(String(200), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utc_now, index=True)
 
     # 外键关联
     classroom = relationship("Classroom", back_populates="lotteries")
@@ -402,7 +407,7 @@ class Quiz(Base):
     questions = Column(Text, default="[]")  # JSON 字符串，题目列表
     answers = Column(Text, default="{}")  # JSON 字符串，用户提交的答案
     status = Column(String(20), default="active", index=True)  # active / ended
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utc_now, index=True)
 
     # 外键关联
     classroom = relationship("Classroom", back_populates="quizzes")
@@ -427,8 +432,8 @@ class StudyMaterial(Base):
     difficulty = Column(Integer, default=3, index=True)  # 难度 1-5
     views = Column(Integer, default=0)  # 浏览次数
     status = Column(String(20), default="active", index=True)  # active / archived
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now, index=True)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
 
 # ========== 收藏功能模块 ==========
@@ -441,7 +446,7 @@ class Favorite(Base):
     user_id = Column(String(64), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     target_type = Column(String(50), index=True, nullable=False)  # study_material / mistake / exercise
     target_id = Column(String(64), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utc_now, index=True)
 
     # 外键关联
     user = relationship("User", back_populates="favorites")
@@ -463,7 +468,7 @@ class Notification(Base):
     content = Column(Text, nullable=False)
     type = Column(String(50), default="system", index=True)  # system / exercise / classroom / reminder
     is_read = Column(Boolean, default=False, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utc_now, index=True)
 
     # 外键关联
     user = relationship("User", back_populates="notifications")
@@ -482,7 +487,7 @@ class StudyActivity(Base):
     title = Column(String(200), nullable=True)
     duration = Column(Integer, default=0)  # 学习时长（秒）
     score = Column(Integer, nullable=True)  # 得分（如果有）
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utc_now, index=True)
 
     # 外键关联
     user = relationship("User", back_populates="study_activities")
@@ -500,7 +505,7 @@ class Achievement(Base):
     icon = Column(String(200), nullable=True)
     condition_type = Column(String(50), index=True, nullable=False)  # exercise_count / streak_days / accuracy / material_count
     condition_value = Column(Integer, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utc_now, index=True)
 
 
 class UserAchievement(Base):
@@ -510,7 +515,7 @@ class UserAchievement(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(String(64), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     achievement_id = Column(String(64), ForeignKey("achievements.id", ondelete="CASCADE"), index=True, nullable=False)
-    unlocked_at = Column(DateTime, default=datetime.utcnow, index=True)
+    unlocked_at = Column(DateTime, default=utc_now, index=True)
 
     __table_args__ = (
         {'sqlite_autoincrement': True},
@@ -530,8 +535,8 @@ class LearningWebsite(Base):
     is_recommended = Column(Boolean, default=False, index=True)
     sort_order = Column(Integer, default=0)
     status = Column(String(20), default="active", index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now, index=True)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
 
 # ========== 外部数据模块（新增）==========
@@ -549,7 +554,7 @@ class ExternalDataRecord(Base):
     knowledge_point = Column(String(200), index=True, nullable=True)  # 知识点
     is_active = Column(Boolean, default=True, index=True)  # 是否有效
     sync_time = Column(DateTime, index=True, nullable=True)  # 同步时间
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utc_now, index=True)
 
     # 复合索引 - 优化常用查询
     __table_args__ = (
@@ -573,8 +578,8 @@ class Task(Base):
     status = Column(String(20), default="pending", index=True)  # pending, completed
     due_date = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now, index=True)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
 
 # ========== 数据库操作函数 ==========

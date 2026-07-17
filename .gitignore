@@ -76,3 +76,9 @@ app.db
 # Test reports
 test_report_*.md
 database_check_report_*.md
+
+# Coverage data
+.coverage
+
+# Local working documents
+abcd/

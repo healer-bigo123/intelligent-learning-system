@@ -1,10 +1,10 @@
 import axios from 'axios'
 
-const API_BASE = 'http://127.0.0.1:8000/api/v1'
+const API_BASE = '/api/v1'
 
 export const api = axios.create({
   baseURL: API_BASE,
-  timeout: 30000,
+  timeout: 60000,
 })
 
 // 请求拦截器：自动添加 Token

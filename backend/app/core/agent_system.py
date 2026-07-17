@@ -300,7 +300,12 @@ class QAAgent(Agent):
         kb_results = self.invoke_tool("knowledge_base_search", query=f"{subject} {topic}")
         
         # 2. 生成回答（优先使用真实LLM）
-        if LLM_AVAILABLE and llm_client:
+        # 使用模块引用获取最新的 llm_client，以支持运行时切换模型
+        import app.core.agent_system as _agent_system
+        current_llm_client = _agent_system.llm_client
+        current_llm_available = _agent_system.LLM_AVAILABLE
+        
+        if current_llm_available and current_llm_client:
             try:
                 # 构建prompt
                 prompt = PROMPT_TEMPLATES.get("qa_agent", """
@@ -327,24 +332,31 @@ class QAAgent(Agent):
                 )
                 
                 # 调用LLM
-                response = llm_client.generate([
+                response = current_llm_client.generate([
                     Message(role="system", content=SYSTEM_PROMPT),
                     Message(role="user", content=prompt)
                 ])
                 
-                if response.error:
-                    # LLM调用失败，回退到模拟模式
+                if response.error or not response.content or not response.content.strip():
+                    # LLM调用失败或返回内容为空，回退到模拟模式
+                    if response.error:
+                        print(f"[DEBUG] LLM调用失败: {response.error}")
+                    else:
+                        print(f"[DEBUG] LLM返回内容为空")
+                    print(f"[DEBUG] 模型: {response.model}")
                     answer = self._generate_simulated_answer(subject, topic, question, kb_results)
-                    confidence = 0.85  # 修复：添加默认置信度
+                    confidence = 0.85
                 else:
                     answer = response.content
                     confidence = min(0.95, 0.8 + (response.usage.get('completion_tokens', 0) / 1000)) if response.usage else 0.9
             except Exception as e:
                 # 异常回退
+                print(f"[DEBUG] LLM调用异常: {e}")
                 answer = self._generate_simulated_answer(subject, topic, question, kb_results)
                 confidence = 0.85
         else:
             # LLM不可用，使用模拟模式
+            print("[DEBUG] LLM不可用，使用模拟模式")
             answer = self._generate_simulated_answer(subject, topic, question, kb_results)
             confidence = 0.92
         

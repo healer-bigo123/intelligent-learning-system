@@ -33,6 +33,37 @@ $transition-fast: 0.15s ease;
 $transition-normal: 0.25s ease;
 $transition-slow: 0.35s ease;
 
+:root {
+  --primary-color: #{$primary-color};
+  --primary-light: #{$primary-light};
+  --primary-dark: #{$primary-dark};
+  --secondary-color: #{$secondary-color};
+  --success-color: #{$success-color};
+  --warning-color: #{$warning-color};
+  --error-color: #{$error-color};
+  --info-color: #{$info-color};
+  --bg-primary: #{$bg-primary};
+  --bg-secondary: #{$bg-secondary};
+  --bg-tertiary: #{$bg-tertiary};
+  --bg-card: #{$bg-card};
+  --bg-hover: #{$bg-hover};
+  --text-primary: #{$text-primary};
+  --text-secondary: #{$text-secondary};
+  --text-muted: #{$text-muted};
+  --border-color: #{$border-color};
+  --border-light: #{$border-light};
+  --radius-sm: #{$radius-sm};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+  --radius-xl: #{$radius-xl};
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
+  --transition-fast: #{$transition-fast};
+  --transition-normal: #{$transition-normal};
+  --transition-slow: #{$transition-slow};
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -83,14 +114,38 @@ body {
 }
 
 .card {
-  background: $bg-card;
+  background: linear-gradient(145deg, rgba(50, 65, 85, 0.98), rgba(30, 45, 65, 0.99));
   border-radius: $radius-lg;
-  border: 1px solid $border-color;
+  border: 2px solid rgba(99, 102, 241, 0.4);
+  padding: 24px;
+  transition: all $transition-normal;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 40px rgba(99, 102, 241, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  &:hover {
+    border-color: rgba(99, 102, 241, 0.6);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 50px rgba(99, 102, 241, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+}
+
+.card-sm {
+  padding: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 30px rgba(99, 102, 241, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.card-lg {
+  padding: 32px;
+}
+
+.stat-card {
+  background: linear-gradient(145deg, rgba(50, 65, 85, 0.98), rgba(30, 45, 65, 0.99));
+  border-radius: $radius-lg;
+  border: 2px solid rgba(99, 102, 241, 0.4);
   padding: 20px;
   transition: all $transition-normal;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 30px rgba(99, 102, 241, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   &:hover {
-    border-color: $primary-color;
-    box-shadow: $shadow-md;
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 40px rgba(99, 102, 241, 0.1);
+    transform: translateY(-2px);
   }
 }
 

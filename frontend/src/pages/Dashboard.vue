@@ -288,8 +288,6 @@ const stats = ref({
   totalTasks: 0
 })
 
-const weeklyGoal = ref(78)
-
 const todayTasks = ref<any[]>([])
 
 const toggleTask = async (taskId: string) => {
@@ -650,15 +648,16 @@ onUnmounted(() => {
   align-items: center;
   gap: 14px;
   padding: 20px;
-  background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-  border: 1px solid rgba(71, 85, 105, 0.5);
-  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, rgba(40, 54, 71, 0.95), rgba(26, 37, 52, 0.98));
+  border: 2px solid rgba(71, 85, 105, 0.7);
+  border-radius: var(--radius-lg);
   transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 20px rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.5);
   }
 }
 

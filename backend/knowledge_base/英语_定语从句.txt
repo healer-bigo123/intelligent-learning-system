@@ -1,0 +1,43 @@
+英语定语从句 (Attributive Clause)
+
+一、定语从句的概念
+定语从句是在复合句中修饰名词或代词的从句。被修饰的词叫先行词，引导定语从句的词叫关系词。
+
+二、关系代词
+1. who：指人，在从句中作主语
+   The man who is standing there is my father.
+2. whom：指人，在从句中作宾语
+   The girl whom you met yesterday is my sister.
+3. whose：指人或物，在从句中作定语
+   The boy whose father is a doctor studies hard.
+4. which：指物，在从句中作主语或宾语
+   The book which is on the desk is mine.
+5. that：指人或物，在从句中作主语或宾语
+   The man that I talked to is Mr. Li.
+
+三、关系副词
+1. when：指时间，在从句中作时间状语
+   I remember the day when I first came here.
+2. where：指地点，在从句中作地点状语
+   This is the school where I studied for three years.
+3. why：指原因，在从句中作原因状语
+   That is the reason why he was late.
+
+四、只能用that的情况
+1. 先行词被序数词或最高级修饰
+   This is the best film that I have ever seen.
+2. 先行词被all, every, no, some, few, little, much等修饰
+   All that can be done has been done.
+3. 先行词既有人又有物
+   He talked about the things and people that he remembered.
+4. 先行词被the only, the very, the same修饰
+   This is the very book that I want.
+
+五、定语从句的易错点
+1. 介词+关系代词结构中不能用that
+   The house in which we lived has been pulled down.
+2. 非限制性定语从句不能用that引导
+   My mother, who is a teacher, retired last year.
+3. as和which引导非限制性定语从句的区别
+   as可放在句首，which不可
+   As is known to all, the earth is round.

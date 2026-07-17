@@ -2,7 +2,7 @@
 成就系统接口
 """
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
@@ -99,7 +99,7 @@ def _get_streak_days(db: Session, user_id: str) -> int:
     # 计算连续天数（从今天往前数）
     sorted_dates = sorted(activity_dates, reverse=True)
     streak = 1
-    today = datetime.utcnow().date()
+    today = datetime.now(timezone.utc).date()
 
     # 如果今天没有活动，从最后一天开始算
     check_date = sorted_dates[0]
