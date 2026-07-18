@@ -127,8 +127,8 @@ const notifications = ref<Notification[]>([
   {
     id: 2,
     type: 'homework',
-    title: '作业提醒：高等数学期中测验',
-    description: '《高等数学》期中测验将于明天 9:00 开始，请提前做好准备。',
+    title: '作业提醒：人工智能导论期中测验',
+    description: '《人工智能导论》期中测验将于明天 9:00 开始，请提前做好准备。',
     timeAgo: '30分钟前',
     read: false,
     createdAt: minutesAgo(30)
@@ -172,8 +172,8 @@ const notifications = ref<Notification[]>([
   {
     id: 7,
     type: 'homework',
-    title: '作业批改完成：线性代数第三章',
-    description: '你提交的《线性代数》第三章作业已批改完成，得分 92 分，点击查看详细反馈。',
+    title: '作业批改完成：机器学习第三章',
+    description: '你提交的《人工智能导论》机器学习第三章作业已批改完成，得分 92 分，点击查看详细反馈。',
     timeAgo: '昨天 14:20',
     read: true,
     createdAt: minutesAgo(60 * 22)
@@ -418,20 +418,21 @@ const markAllAsRead = () => {
   align-items: flex-start;
   gap: 14px;
   padding: 16px 18px;
-  background: var(--bg-card, #16213e);
-  border: 1px solid var(--border-color, #374151);
-  border-radius: var(--radius-md, 12px);
+  background: linear-gradient(145deg, rgba(40, 54, 71, 0.95), rgba(26, 37, 52, 0.98));
+  border: 2px solid rgba(71, 85, 105, 0.7);
+  border-radius: var(--radius-lg, 12px);
   cursor: pointer;
   transition: all 0.25s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   &:hover {
-    border-color: rgba(99, 102, 241, 0.4);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
     transform: translateY(-1px);
   }
 
   &.unread {
-    background: linear-gradient(145deg, rgba(59, 130, 246, 0.06), rgba(22, 33, 62, 0.95));
+    background: linear-gradient(145deg, rgba(59, 130, 246, 0.1), rgba(40, 54, 71, 0.98));
     border-color: rgba(59, 130, 246, 0.25);
   }
 }

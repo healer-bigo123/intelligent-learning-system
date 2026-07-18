@@ -73,11 +73,11 @@
             <h2 class="content-title">个人资料</h2>
           </div>
 
-          <form class="profile-form">
+          <form class="profile-form" @submit.prevent="handleSave">
             <div class="form-row">
               <div class="form-group">
                 <label>用户名</label>
-                <input type="text" v-model="formData.username" class="form-input" />
+                <input type="text" v-model="formData.username" class="form-input" readonly />
               </div>
               <div class="form-group">
                 <label>昵称</label>
@@ -114,7 +114,7 @@
         <div v-if="activeMenu === 'goals'" class="content-section">
           <div class="content-header">
             <h2 class="content-title">学习目标</h2>
-            <button class="add-btn">
+            <button class="add-btn" @click="showAddGoalModal = true">
               <component :is="icons.Plus" class="add-icon" />
               添加目标
             </button>
@@ -142,10 +142,117 @@
               </div>
               <div class="goal-footer">
                 <span class="goal-deadline">截止日期: {{ goal.deadline }}</span>
-                <button class="goal-action">
-                  <component :is="icons.MoreHorizontal" class="action-icon" />
-                </button>
+                <div class="goal-actions">
+                  <button class="goal-action" @click="toggleGoalMenu(goal.id)">
+                    <component :is="icons.MoreHorizontal" class="action-icon" />
+                  </button>
+                  <div v-if="activeGoalMenu === goal.id" class="goal-menu">
+                    <button class="menu-item" @click="editGoal(goal)">
+                      <component :is="icons.Pencil" class="menu-icon" />
+                      编辑
+                    </button>
+                    <button class="menu-item danger" @click="deleteGoal(goal.id)">
+                      <component :is="icons.Trash2" class="menu-icon" />
+                      删除
+                    </button>
+                  </div>
+                </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 添加目标弹窗 -->
+        <div v-if="showAddGoalModal" class="modal-overlay" @click.self="showAddGoalModal = false">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>添加学习目标</h3>
+              <button class="modal-close" @click="showAddGoalModal = false">
+                <component :is="icons.X" class="close-icon" />
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label>目标标题</label>
+                <input v-model="newGoal.title" type="text" class="form-input" placeholder="请输入目标标题" />
+              </div>
+              <div class="form-group">
+                <label>目标描述</label>
+                <textarea v-model="newGoal.description" rows="3" class="form-textarea" placeholder="请输入目标描述"></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>目标颜色</label>
+                  <div class="color-picker">
+                    <button 
+                      v-for="color in colorOptions" 
+                      :key="color" 
+                      class="color-btn" 
+                      :class="{ active: newGoal.color === color }"
+                      :style="{ background: color }"
+                      @click="newGoal.color = color"
+                    ></button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>截止日期</label>
+                  <input v-model="newGoal.deadline" type="date" class="form-input" />
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-cancel" @click="showAddGoalModal = false">取消</button>
+              <button class="btn-save" @click="addGoal">添加目标</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 编辑目标弹窗 -->
+        <div v-if="showEditGoalModal && editingGoal" class="modal-overlay" @click.self="showEditGoalModal = false">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>编辑学习目标</h3>
+              <button class="modal-close" @click="showEditGoalModal = false">
+                <component :is="icons.X" class="close-icon" />
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label>目标标题</label>
+                <input v-model="editingGoal.title" type="text" class="form-input" placeholder="请输入目标标题" />
+              </div>
+              <div class="form-group">
+                <label>目标描述</label>
+                <textarea v-model="editingGoal.description" rows="3" class="form-textarea" placeholder="请输入目标描述"></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>目标颜色</label>
+                  <div class="color-picker">
+                    <button 
+                      v-for="color in colorOptions" 
+                      :key="color" 
+                      class="color-btn" 
+                      :class="{ active: editingGoal.color === color }"
+                      :style="{ background: color }"
+                      @click="editingGoal.color = color"
+                    ></button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>截止日期</label>
+                  <input v-model="editingGoal.deadline" type="date" class="form-input" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label>完成进度</label>
+                <input v-model.number="editingGoal.progress" type="range" min="0" max="100" class="progress-slider" />
+                <span class="progress-display">{{ editingGoal.progress }}%</span>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-cancel" @click="showEditGoalModal = false">取消</button>
+              <button class="btn-save" @click="saveEditGoal">保存修改</button>
             </div>
           </div>
         </div>
@@ -183,16 +290,16 @@
           </div>
 
           <div class="notifications-list">
-            <div v-for="notification in notifications" :key="notification.id" class="notification-item">
+            <div v-for="(notification, index) in notifications" :key="notification.id" class="notification-item">
               <div class="notification-info">
                 <h3 class="notification-title">{{ notification.title }}</h3>
                 <p class="notification-desc">{{ notification.description }}</p>
               </div>
               <div class="notification-toggle">
-                <button 
+                <button
                   class="toggle-btn"
                   :class="{ active: notification.enabled }"
-                  @click="notification.enabled = !notification.enabled"
+                  @click="toggleNotification(notification.key, index)"
                 >
                   <span class="toggle-thumb"></span>
                 </button>
@@ -251,27 +358,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import {
   User, Camera, Pencil, Share2, Settings, Target, Bell,
   Shield, ChevronRight, Plus, MoreHorizontal, Lock,
-  Key, Mail, AlertCircle, Award
+  Key, Mail, AlertCircle, Award, X, Trash2,
+  Lightbulb, Cpu, Aperture, Search, Code, Globe, BookOpen
 } from 'lucide-vue-next'
+import { getProfile, updateProfile, type UserInfo } from '@/api/auth'
+import { getGoals, createGoal, updateGoal, deleteGoal as deleteGoalApi, type Goal as ApiGoal } from '@/api/goals'
+import { getNotificationSettings, updateNotificationSettings, type NotificationSettings } from '@/api/notificationSettings'
 
 const icons = {
   User, Camera, Pencil, Share2, Settings, Target, Bell,
   Shield, ChevronRight, Plus, MoreHorizontal, Lock,
-  Key, Mail, AlertCircle, Award
+  Key, Mail, AlertCircle, Award, X, Trash2,
+  Lightbulb, Cpu, Aperture, Search, Code, Globe, BookOpen
 }
 
 const avatarColor = '#6366f1'
+const loading = ref(false)
+const saving = ref(false)
 
 const user = ref({
-  name: '学习者小明',
-  title: '勤奋的学习者',
-  courses: 12,
-  hours: 156,
-  streak: 15
+  name: '',
+  title: '',
+  courses: 0,
+  hours: 0,
+  streak: 0
 })
 
 const activeMenu = ref('profile')
@@ -286,50 +400,226 @@ const menuItems = [
 ]
 
 const formData = ref({
-  username: 'learner_xm',
-  nickname: '学习者小明',
-  email: 'learner@example.com',
-  phone: '138****8888',
-  bio: '热爱学习，每天进步一点点！'
+  username: '',
+  nickname: '',
+  email: '',
+  phone: '',
+  bio: ''
 })
 
-const goals = ref([
-  {
-    id: 1,
-    title: '完成高等数学课程',
-    description: '掌握微积分基础知识，为大学学习打下基础',
-    progress: 75,
-    deadline: '2026-08-31',
-    color: '#3b82f6',
-    icon: Target
-  },
-  {
-    id: 2,
-    title: 'Python编程入门',
-    description: '学习Python基础语法，能够独立编写简单程序',
-    progress: 45,
-    deadline: '2026-09-15',
-    color: '#10b981',
-    icon: Settings
-  },
-  {
-    id: 3,
-    title: '英语四级备考',
-    description: '提高英语水平，通过大学英语四级考试',
-    progress: 30,
-    deadline: '2026-12-20',
-    color: '#f59e0b',
-    icon: Target
+async function loadProfile() {
+  try {
+    loading.value = true
+    const res = await getProfile()
+    const info: UserInfo = res.data
+    user.value.name = info.nickname || info.username
+    user.value.title = info.role === 'teacher' ? '教师' : '学生'
+    formData.value = {
+      username: info.username,
+      nickname: info.nickname || '',
+      email: info.email || '',
+      phone: info.phone || '',
+      bio: info.bio || ''
+    }
+  } catch (e) {
+    console.error('获取用户信息失败', e)
+  } finally {
+    loading.value = false
   }
+}
+
+async function handleSave() {
+  try {
+    saving.value = true
+    await updateProfile({
+      nickname: formData.value.nickname,
+      email: formData.value.email,
+      phone: formData.value.phone,
+      bio: formData.value.bio
+    })
+    user.value.name = formData.value.nickname || formData.value.username
+    alert('保存成功')
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '保存失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+onMounted(() => {
+  loadProfile()
+  loadGoals()
+  loadNotificationSettings()
+})
+
+// 图标名称映射
+type IconName = 'BookOpen' | 'Search' | 'Code' | 'Cpu' | 'Globe' | 'Aperture' | 'Shield' | 'Target' | 'Lightbulb'
+const iconMap: Record<IconName, any> = {
+  BookOpen, Search, Code, Cpu, Globe, Aperture, Shield, Target, Lightbulb
+}
+
+interface Goal {
+  id: string
+  title: string
+  description: string
+  progress: number
+  deadline: string
+  color: string
+  icon: IconName
+}
+
+const goals = ref<Goal[]>([])
+const goalsLoading = ref(false)
+
+async function loadGoals() {
+  try {
+    goalsLoading.value = true
+    const res = await getGoals()
+    goals.value = res.data.items.map((g: ApiGoal) => ({
+      id: g.id,
+      title: g.title,
+      description: g.description || '',
+      progress: g.progress,
+      deadline: g.deadline ? g.deadline.split('T')[0] : '',
+      color: g.color,
+      icon: (iconMap[g.icon as IconName] || Target) as IconName
+    }))
+  } catch (e) {
+    console.error('获取学习目标失败', e)
+  } finally {
+    goalsLoading.value = false
+  }
+}
+
+const showAddGoalModal = ref(false)
+const colorOptions = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#f97316']
+const newGoal = ref({
+  title: '',
+  description: '',
+  color: '#3b82f6',
+  deadline: ''
+})
+
+async function addGoal() {
+  if (!newGoal.value.title.trim()) {
+    alert('请输入目标标题')
+    return
+  }
+  if (!newGoal.value.deadline) {
+    alert('请选择截止日期')
+    return
+  }
+  try {
+    await createGoal({
+      title: newGoal.value.title,
+      description: newGoal.value.description || '暂无描述',
+      color: newGoal.value.color,
+      deadline: newGoal.value.deadline,
+      progress: 0,
+      icon: 'Target'
+    })
+    newGoal.value = { title: '', description: '', color: '#3b82f6', deadline: '' }
+    showAddGoalModal.value = false
+    await loadGoals()
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '添加目标失败')
+  }
+}
+
+const activeGoalMenu = ref<string | null>(null)
+const editingGoal = ref<Goal | null>(null)
+const showEditGoalModal = ref(false)
+
+function toggleGoalMenu(goalId: string) {
+  activeGoalMenu.value = activeGoalMenu.value === goalId ? null : goalId
+}
+
+async function deleteGoal(goalId: string) {
+  if (!confirm('确定要删除这个学习目标吗？')) return
+  try {
+    await deleteGoalApi(goalId)
+    activeGoalMenu.value = null
+    await loadGoals()
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '删除目标失败')
+  }
+}
+
+function editGoal(goal: Goal) {
+  editingGoal.value = { ...goal }
+  showEditGoalModal.value = true
+  activeGoalMenu.value = null
+}
+
+async function saveEditGoal() {
+  if (!editingGoal.value) return
+  if (!editingGoal.value.title.trim()) {
+    alert('请输入目标标题')
+    return
+  }
+  if (!editingGoal.value.deadline) {
+    alert('请选择截止日期')
+    return
+  }
+  try {
+    await updateGoal(editingGoal.value.id, {
+      title: editingGoal.value.title,
+      description: editingGoal.value.description,
+      color: editingGoal.value.color,
+      progress: editingGoal.value.progress,
+      deadline: editingGoal.value.deadline
+    })
+    showEditGoalModal.value = false
+    editingGoal.value = null
+    await loadGoals()
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '保存目标失败')
+  }
+}
+
+interface NotificationItem {
+  id: string
+  title: string
+  description: string
+  key: keyof NotificationSettings
+  enabled: boolean
+}
+
+const notificationSettings = ref<NotificationSettings | null>(null)
+const notifications = ref<NotificationItem[]>([
+  { id: 'study_reminder', title: '学习提醒', description: '每日学习计划提醒', key: 'study_reminder', enabled: true },
+  { id: 'task_reminder', title: '任务提醒', description: '任务到期或新任务分配时通知', key: 'task_reminder', enabled: true },
+  { id: 'achievement_notice', title: '成就通知', description: '获得新成就时通知', key: 'achievement_notice', enabled: true },
+  { id: 'system_notice', title: '系统通知', description: '系统公告与重要更新', key: 'system_notice', enabled: true },
+  { id: 'email_notice', title: '邮件通知', description: '通过邮件接收重要通知', key: 'email_notice', enabled: false },
+  { id: 'push_notice', title: '推送通知', description: '浏览器/桌面推送通知', key: 'push_notice', enabled: true }
 ])
 
-const notifications = ref([
-  { id: 1, title: '学习提醒', description: '每日学习计划提醒', enabled: true },
-  { id: 2, title: '课程更新', description: '关注的课程有新内容时通知', enabled: true },
-  { id: 3, title: '成就通知', description: '获得新成就时通知', enabled: true },
-  { id: 4, title: '社区互动', description: '有人评论或回复您的内容', enabled: false },
-  { id: 5, title: '周报推送', description: '每周学习总结报告', enabled: true }
-])
+async function loadNotificationSettings() {
+  try {
+    const res = await getNotificationSettings()
+    notificationSettings.value = res.data
+    notifications.value = notifications.value.map(item => ({
+      ...item,
+      enabled: res.data[item.key] as boolean
+    }))
+  } catch (e) {
+    console.error('获取通知设置失败', e)
+  }
+}
+
+async function toggleNotification(key: keyof NotificationSettings, index: number) {
+  const newValue = !notifications.value[index].enabled
+  notifications.value[index].enabled = newValue
+  try {
+    const updateData: Record<string, boolean> = {}
+    updateData[key as string] = newValue
+    await updateNotificationSettings(updateData)
+  } catch (e: any) {
+    notifications.value[index].enabled = !newValue
+    alert(e.response?.data?.detail || '更新通知设置失败')
+  }
+}
 
 const privacySettings = ref([
   { id: 1, title: '公开学习动态', description: '允许他人查看您的学习动态', enabled: true },
@@ -346,12 +636,14 @@ const securityOptions = ref([
 ])
 
 const myAchievements = ref([
-  { id: 1, title: '首次登录', description: '第一次成功登录学习平台', icon: Award, color: '#f59e0b', unlocked: true },
-  { id: 2, title: '连续学习7天', description: '连续7天保持学习打卡', icon: Target, color: '#10b981', unlocked: true },
-  { id: 3, title: '完成100道题', description: '累计完成100道练习题', icon: Target, color: '#3b82f6', unlocked: true },
-  { id: 4, title: '连续学习30天', description: '连续30天保持学习打卡', icon: Target, color: '#8b5cf6', unlocked: false },
-  { id: 5, title: '完成500道题', description: '累计完成500道练习题', icon: Target, color: '#ec4899', unlocked: false },
-  { id: 6, title: '全学科精通', description: '所有学科学习进度达到80%以上', icon: Award, color: '#f97316', unlocked: false }
+  { id: 1, title: 'AI 探索者', description: '完成「人工智能概述」章节学习', icon: Lightbulb, color: '#3b82f6', unlocked: true },
+  { id: 2, title: '搜索大师', description: '完成「搜索与推理」章节学习', icon: Search, color: '#f59e0b', unlocked: true },
+  { id: 3, title: '连续学习7天', description: '连续7天保持学习打卡', icon: Target, color: '#10b981', unlocked: true },
+  { id: 4, title: '完成100道 AI 题', description: '累计完成100道人工智能导论练习题', icon: BookOpen, color: '#3b82f6', unlocked: true },
+  { id: 5, title: '机器学习学徒', description: '完成「机器学习」章节学习', icon: Code, color: '#10b981', unlocked: false },
+  { id: 6, title: '深度学习先锋', description: '完成「深度学习」章节学习', icon: Cpu, color: '#ef4444', unlocked: false },
+  { id: 7, title: 'NLP 实践者', description: '完成「自然语言处理」章节学习', icon: Globe, color: '#8b5cf6', unlocked: false },
+  { id: 8, title: 'CV 研究者', description: '完成「计算机视觉」章节学习', icon: Aperture, color: '#06b6d4', unlocked: false }
 ])
 </script>
 
@@ -363,10 +655,11 @@ const myAchievements = ref([
 }
 
 .profile-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(145deg, rgba(50, 65, 85, 0.98), rgba(30, 45, 65, 0.99));
+  border: 2px solid rgba(99, 102, 241, 0.4);
   border-radius: var(--radius-lg);
-  padding: 24px;
+  padding: 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 40px rgba(99, 102, 241, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .profile-header {
@@ -424,16 +717,18 @@ const myAchievements = ref([
   flex: 1;
 
   .user-name {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--text-primary);
+    font-size: 32px;
+    font-weight: 800;
+    color: #ffffff;
     margin: 0 0 8px;
+    text-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
   }
 
   .user-title {
     font-size: 14px;
-    color: var(--text-muted);
+    color: #94a3b8;
     margin: 0 0 20px;
+    font-weight: 500;
   }
 }
 
@@ -447,16 +742,22 @@ const myAchievements = ref([
   display: flex;
   flex-direction: column;
   gap: 4px;
+  padding: 16px 24px;
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(99, 102, 241, 0.2);
 
   .stat-value {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--primary-color);
+    font-size: 28px;
+    font-weight: 800;
+    color: #818cf8;
+    text-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
   }
 
   .stat-label {
     font-size: 12px;
-    color: var(--text-muted);
+    color: #94a3b8;
+    font-weight: 500;
   }
 }
 
@@ -522,10 +823,11 @@ const myAchievements = ref([
 }
 
 .menu-section {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(145deg, rgba(50, 65, 85, 0.98), rgba(30, 45, 65, 0.99));
+  border: 2px solid rgba(99, 102, 241, 0.4);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 40px rgba(99, 102, 241, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .section-title {
@@ -549,24 +851,28 @@ const myAchievements = ref([
   align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 12px 16px;
-  background: transparent;
-  border: none;
+  padding: 14px 18px;
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
-  color: var(--text-secondary);
+  color: #94a3b8;
   font-size: 14px;
+  font-weight: 500;
   text-align: left;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
+    background: rgba(99, 102, 241, 0.12);
+    color: #ffffff;
+    border-color: rgba(99, 102, 241, 0.3);
   }
 
   &.active {
-    background: rgba(99, 102, 241, 0.1);
-    color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.18);
+    color: #818cf8;
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
   }
 
   .menu-icon {
@@ -577,10 +883,11 @@ const myAchievements = ref([
 
 .settings-content {
   flex: 1;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(145deg, rgba(50, 65, 85, 0.98), rgba(30, 45, 65, 0.99));
+  border: 2px solid rgba(99, 102, 241, 0.4);
   border-radius: var(--radius-lg);
   min-height: 500px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 40px rgba(99, 102, 241, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .content-section {
@@ -725,14 +1032,16 @@ const myAchievements = ref([
 }
 
 .goal-card {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(145deg, rgba(60, 75, 95, 0.95), rgba(40, 55, 75, 0.98));
+  border: 2px solid rgba(71, 85, 105, 0.6);
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 24px;
   transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   &:hover {
-    border-color: var(--primary-color);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 0 20px rgba(99, 102, 241, 0.1);
   }
 }
 
@@ -821,25 +1130,76 @@ const myAchievements = ref([
     color: var(--text-muted);
   }
 
-  .goal-action {
-    width: 32px;
-    height: 32px;
-    background: var(--bg-card);
-    border: none;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
+  .goal-actions {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
 
-    &:hover {
-      background: var(--border-color);
+    .goal-action {
+      width: 32px;
+      height: 32px;
+      background: var(--bg-card);
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover {
+        background: var(--border-color);
+      }
+
+      .action-icon {
+        width: 16px;
+        height: 16px;
+        color: var(--text-muted);
+      }
     }
 
-    .action-icon {
-      width: 16px;
-      height: 16px;
-      color: var(--text-muted);
+    .goal-menu {
+      position: absolute;
+      right: 0;
+      top: 40px;
+      background: linear-gradient(145deg, rgba(40, 54, 71, 0.98), rgba(26, 37, 52, 0.99));
+      border: 2px solid rgba(71, 85, 105, 0.7);
+      border-radius: var(--radius-md);
+      padding: 6px;
+      min-width: 120px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 100;
+
+      .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 10px 12px;
+        background: transparent;
+        border: none;
+        border-radius: var(--radius-sm);
+        color: var(--text-primary);
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: rgba(99, 102, 241, 0.1);
+        }
+
+        &.danger {
+          color: #ef4444;
+
+          &:hover {
+            background: rgba(239, 68, 68, 0.1);
+          }
+        }
+
+        .menu-icon {
+          width: 14px;
+          height: 14px;
+        }
+      }
     }
   }
 }
@@ -1048,4 +1408,165 @@ const myAchievements = ref([
     }
   }
 }
-</style>
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+  background: linear-gradient(145deg, rgba(40, 54, 71, 0.98), rgba(26, 37, 52, 0.99));
+  border: 2px solid rgba(71, 85, 105, 0.7);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 480px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  animation: slideUp 0.2s ease;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+  }
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary-color);
+  }
+
+  .close-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--text-secondary);
+  }
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  justify-content: flex-end;
+}
+
+.color-picker {
+  display: flex;
+  gap: 10px;
+
+  .color-btn {
+    width: 32px;
+    height: 32px;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &.active {
+      border-color: #ffffff;
+      transform: scale(1.15);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+    }
+
+    &:hover {
+      transform: scale(1.1);
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.progress-slider {
+  width: 100%;
+  height: 8px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--bg-card);
+  border-radius: 4px;
+  cursor: pointer;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: scale(1.1);
+    }
+  }
+
+  &::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+  }
+}
+
+.progress-display {
+  display: block;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-top: 8px;
+}</style>

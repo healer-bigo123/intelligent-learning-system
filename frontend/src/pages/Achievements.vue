@@ -91,7 +91,8 @@
 import { ref, computed } from 'vue'
 import {
   Star, Flame, BookOpen, Target, Clock,
-  Award, Lock, Zap, Heart, Share2, Users
+  Award, Lock, Zap, Heart, Share2, Users,
+  Lightbulb, Cpu, Shield, Aperture, Search, Code, Globe
 } from 'lucide-vue-next'
 import type { Component } from 'vue'
 
@@ -119,18 +120,78 @@ interface Achievement {
 const achievements = ref<Achievement[]>([
   {
     id: 1,
-    name: '首次登录',
-    description: '第一次成功登录学习平台，开启学习之旅',
-    points: 10,
-    icon: Award,
-    iconClass: 'icon-trophy',
+    name: 'AI 探索者',
+    description: '完成「人工智能概述」章节学习，理解人工智能的基本概念与发展历程',
+    points: 20,
+    icon: Lightbulb,
+    iconClass: 'icon-lightbulb',
     unlocked: true,
     category: 'learning'
   },
   {
     id: 2,
+    name: '搜索大师',
+    description: '完成「搜索与推理」章节学习，掌握常见搜索算法与知识表示方法',
+    points: 30,
+    icon: Search,
+    iconClass: 'icon-search',
+    unlocked: true,
+    category: 'learning'
+  },
+  {
+    id: 3,
+    name: '机器学习学徒',
+    description: '完成「机器学习」章节学习，理解监督学习、无监督学习等基础算法',
+    points: 40,
+    icon: Code,
+    iconClass: 'icon-code',
+    unlocked: false,
+    category: 'learning'
+  },
+  {
+    id: 4,
+    name: '深度学习先锋',
+    description: '完成「深度学习」章节学习，掌握神经网络与 CNN/RNN 基本原理',
+    points: 50,
+    icon: Cpu,
+    iconClass: 'icon-cpu',
+    unlocked: false,
+    category: 'learning'
+  },
+  {
+    id: 5,
+    name: 'NLP 实践者',
+    description: '完成「自然语言处理」章节学习，理解文本分类、序列标注等任务',
+    points: 45,
+    icon: Globe,
+    iconClass: 'icon-globe',
+    unlocked: false,
+    category: 'learning'
+  },
+  {
+    id: 6,
+    name: 'CV 研究者',
+    description: '完成「计算机视觉」章节学习，掌握图像分类、目标检测与图像分割的基本方法',
+    points: 45,
+    icon: Aperture,
+    iconClass: 'icon-aperture',
+    unlocked: false,
+    category: 'learning'
+  },
+  {
+    id: 7,
+    name: 'AI 伦理思考者',
+    description: '完成「人工智能伦理」章节学习，理解 AI 公平性、隐私与安全等议题',
+    points: 35,
+    icon: Shield,
+    iconClass: 'icon-shield',
+    unlocked: false,
+    category: 'learning'
+  },
+  {
+    id: 8,
     name: '连续学习7天',
-    description: '连续7天保持学习打卡，养成良好习惯',
+    description: '连续7天保持学习打卡，养成良好学习习惯',
     points: 50,
     icon: Flame,
     iconClass: 'icon-flame',
@@ -138,49 +199,59 @@ const achievements = ref<Achievement[]>([
     category: 'streak'
   },
   {
-    id: 3,
-    name: '完成100道题',
-    description: '累计完成100道练习题，知识量稳步提升',
-    points: 80,
-    icon: BookOpen,
-    iconClass: 'icon-book',
-    unlocked: true,
-    category: 'explore'
-  },
-  {
-    id: 4,
+    id: 9,
     name: '专注学习10小时',
-    description: '累计专注学习达到10小时，深度学习达人',
-    points: 100,
+    description: '累计专注学习达到10小时，沉浸式学习达人',
+    points: 80,
     icon: Clock,
     iconClass: 'icon-clock',
     unlocked: false,
     category: 'streak'
   },
   {
-    id: 5,
-    name: '掌握50个知识点',
-    description: '成功掌握50个核心知识点，知识体系初步建立',
-    points: 120,
+    id: 10,
+    name: '完成100道 AI 题',
+    description: '累计完成100道人工智能导论练习题，知识量稳步提升',
+    points: 60,
+    icon: BookOpen,
+    iconClass: 'icon-book',
+    unlocked: true,
+    category: 'explore'
+  },
+  {
+    id: 11,
+    name: '掌握30个 AI 知识点',
+    description: '成功掌握30个人工智能导论核心知识点，知识体系初步建立',
+    points: 100,
     icon: Target,
     iconClass: 'icon-target',
     unlocked: false,
     category: 'explore'
   },
   {
-    id: 6,
-    name: '获得第一个满分',
-    description: '在某次练习中获得满分，表现优异',
-    points: 60,
+    id: 12,
+    name: 'AI 满分挑战',
+    description: '在人工智能导论练习测试中获得满分，表现优异',
+    points: 70,
     icon: Award,
     iconClass: 'icon-award',
     unlocked: true,
+    category: 'explore'
+  },
+  {
+    id: 13,
+    name: '全课程精通',
+    description: '完成人工智能导论所有章节学习，全面掌握课程内容',
+    points: 200,
+    icon: Star,
+    iconClass: 'icon-star',
+    unlocked: false,
     category: 'learning'
   },
   {
-    id: 7,
-    name: '分享学习笔记',
-    description: '首次分享学习笔记给其他同学，知识传递',
+    id: 14,
+    name: '分享 AI 学习笔记',
+    description: '首次分享人工智能导论学习笔记给其他同学，知识传递',
     points: 30,
     icon: Share2,
     iconClass: 'icon-share',
@@ -188,24 +259,14 @@ const achievements = ref<Achievement[]>([
     category: 'social'
   },
   {
-    id: 8,
-    name: '帮助3位同学',
-    description: '在学习社区中成功帮助3位同学解答问题',
-    points: 70,
+    id: 15,
+    name: 'AI 互助达人',
+    description: '在学习社区中成功帮助3位同学解答人工智能导论相关问题',
+    points: 60,
     icon: Users,
     iconClass: 'icon-users',
     unlocked: false,
     category: 'social'
-  },
-  {
-    id: 9,
-    name: '完成所有课程',
-    description: '完成平台上所有课程的学习，全面掌握知识',
-    points: 200,
-    icon: Star,
-    iconClass: 'icon-star',
-    unlocked: false,
-    category: 'learning'
   }
 ])
 
@@ -393,19 +454,20 @@ const filteredAchievements = computed(() => {
   display: flex;
   flex-direction: column;
   padding: 22px 20px;
-  background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-  border: 1px solid rgba(71, 85, 105, 0.4);
-  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, rgba(40, 54, 71, 0.95), rgba(26, 37, 52, 0.98));
+  border: 2px solid rgba(71, 85, 105, 0.7);
+  border-radius: var(--radius-lg);
   transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   &.unlocked {
-    border-color: rgba(245, 158, 11, 0.3);
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.06);
+    border-color: rgba(245, 158, 11, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 20px rgba(245, 158, 11, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
     &:hover {
       transform: translateY(-3px);
-      box-shadow: 0 0 30px rgba(245, 158, 11, 0.12), 0 8px 20px rgba(0, 0, 0, 0.2);
-      border-color: rgba(245, 158, 11, 0.5);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 30px rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.6);
     }
   }
 
@@ -487,6 +549,41 @@ const filteredAchievements = computed(() => {
     background: rgba(251, 191, 36, 0.12);
     .card-icon { color: rgba(251, 191, 36, 0.85); }
   }
+
+  &.icon-lightbulb {
+    background: rgba(99, 102, 241, 0.12);
+    .card-icon { color: rgba(99, 102, 241, 0.85); }
+  }
+
+  &.icon-search {
+    background: rgba(245, 158, 11, 0.12);
+    .card-icon { color: rgba(245, 158, 11, 0.85); }
+  }
+
+  &.icon-code {
+    background: rgba(16, 185, 129, 0.12);
+    .card-icon { color: rgba(16, 185, 129, 0.85); }
+  }
+
+  &.icon-cpu {
+    background: rgba(239, 68, 68, 0.12);
+    .card-icon { color: rgba(239, 68, 68, 0.85); }
+  }
+
+  &.icon-globe {
+    background: rgba(139, 92, 246, 0.12);
+    .card-icon { color: rgba(139, 92, 246, 0.85); }
+  }
+
+  &.icon-aperture {
+    background: rgba(6, 182, 212, 0.12);
+    .card-icon { color: rgba(6, 182, 212, 0.85); }
+  }
+
+  &.icon-shield {
+    background: rgba(236, 72, 153, 0.12);
+    .card-icon { color: rgba(236, 72, 153, 0.85); }
+  }
 }
 
 .unlocked .card-icon-wrapper {
@@ -499,6 +596,13 @@ const filteredAchievements = computed(() => {
   &.icon-share { background: rgba(99, 102, 241, 0.18); }
   &.icon-users { background: rgba(244, 114, 182, 0.18); }
   &.icon-star { background: rgba(251, 191, 36, 0.18); }
+  &.icon-lightbulb { background: rgba(99, 102, 241, 0.18); }
+  &.icon-search { background: rgba(245, 158, 11, 0.18); }
+  &.icon-code { background: rgba(16, 185, 129, 0.18); }
+  &.icon-cpu { background: rgba(239, 68, 68, 0.18); }
+  &.icon-globe { background: rgba(139, 92, 246, 0.18); }
+  &.icon-aperture { background: rgba(6, 182, 212, 0.18); }
+  &.icon-shield { background: rgba(236, 72, 153, 0.18); }
 }
 
 .card-body {

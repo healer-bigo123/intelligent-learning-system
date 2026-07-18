@@ -6,12 +6,30 @@
         <p class="subtitle">个性化学习平台</p>
       </div>
 
-      <form @submit.prevent="handleLogin" class="login-form">
+      <div class="auth-tabs">
+        <button
+          class="auth-tab"
+          :class="{ active: activeTab === 'login' }"
+          @click="activeTab = 'login'"
+        >
+          登录
+        </button>
+        <button
+          class="auth-tab"
+          :class="{ active: activeTab === 'register' }"
+          @click="activeTab = 'register'"
+        >
+          注册
+        </button>
+      </div>
+
+      <!-- 登录表单 -->
+      <form v-if="activeTab === 'login'" @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
           <label for="username">用户名</label>
           <input
             id="username"
-            v-model="username"
+            v-model="loginForm.username"
             type="text"
             placeholder="请输入用户名"
             required
@@ -22,7 +40,7 @@
           <label for="password">密码</label>
           <input
             id="password"
-            v-model="password"
+            v-model="loginForm.password"
             type="password"
             placeholder="请输入密码"
             required
@@ -36,31 +54,111 @@
         <div v-if="error" class="error-message">{{ error }}</div>
       </form>
 
-      <div class="test-accounts">
-        <p class="test-title">测试账号：</p>
-        <div class="account-item">
-          <span>学生：</span>
-          <code>student1 / 123456</code>
+      <!-- 注册表单 -->
+      <form v-else @submit.prevent="handleRegister" class="login-form">
+        <div class="form-group">
+          <label for="reg-username">用户名</label>
+          <input
+            id="reg-username"
+            v-model="registerForm.username"
+            type="text"
+            placeholder="请输入用户名（3-50位）"
+            required
+          />
         </div>
-        <div class="account-item">
-          <span>老师：</span>
-          <code>teacher1 / 123456</code>
+
+        <div class="form-group">
+          <label for="reg-nickname">昵称</label>
+          <input
+            id="reg-nickname"
+            v-model="registerForm.nickname"
+            type="text"
+            placeholder="请输入昵称（可选）"
+          />
         </div>
-      </div>
+
+        <div class="form-group">
+          <label for="reg-email">邮箱</label>
+          <input
+            id="reg-email"
+            v-model="registerForm.email"
+            type="email"
+            placeholder="请输入邮箱（可选）"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="reg-password">密码</label>
+          <input
+            id="reg-password"
+            v-model="registerForm.password"
+            type="password"
+            placeholder="请输入密码（至少6位）"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="reg-confirmPassword">确认密码</label>
+          <input
+            id="reg-confirmPassword"
+            v-model="registerForm.confirmPassword"
+            type="password"
+            placeholder="请再次输入密码"
+            required
+          />
+        </div>
+
+        <button type="submit" class="login-btn" :disabled="loading">
+          {{ loading ? '注册中...' : '注册' }}
+        </button>
+
+        <div v-if="error" class="error-message">{{ error }}</div>
+        <div v-if="success" class="success-message">{{ success }}</div>
+      </form>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { api } from '@/api/client'
 
+const route = useRoute()
 const router = useRouter()
-const username = ref('')
-const password = ref('')
+
+const activeTab = ref<'login' | 'register'>('login')
+
+// 根据路由或查询参数切换标签
+watch(
+  () => route.query.tab,
+  (tab) => {
+    if (tab === 'register') {
+      activeTab.value = 'register'
+    } else {
+      activeTab.value = 'login'
+    }
+  },
+  { immediate: true }
+)
+
+const loginForm = ref({
+  username: '',
+  password: ''
+})
+
+const registerForm = ref({
+  username: '',
+  nickname: '',
+  email: '',
+  password: '',
+  confirmPassword: ''
+})
+
 const loading = ref(false)
 const error = ref('')
+const success = ref('')
 
 const handleLogin = async () => {
   loading.value = true
@@ -68,20 +166,59 @@ const handleLogin = async () => {
 
   try {
     const response = await api.post('/auth/login', {
-      username: username.value,
-      password: password.value
+      username: loginForm.value.username,
+      password: loginForm.value.password
     })
 
     const { access_token, user } = response.data
 
-    // 保存token和用户信息
     localStorage.setItem('token', access_token)
     localStorage.setItem('user', JSON.stringify(user))
 
-    // 跳转到首页
     router.push('/')
   } catch (err: any) {
     error.value = err.response?.data?.detail || '登录失败，请检查用户名和密码'
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleRegister = async () => {
+  loading.value = true
+  error.value = ''
+  success.value = ''
+
+  if (registerForm.value.password !== registerForm.value.confirmPassword) {
+    error.value = '两次输入的密码不一致'
+    loading.value = false
+    return
+  }
+
+  if (registerForm.value.password.length < 6) {
+    error.value = '密码至少6位'
+    loading.value = false
+    return
+  }
+
+  try {
+    const response = await api.post('/auth/register', {
+      username: registerForm.value.username,
+      password: registerForm.value.password,
+      email: registerForm.value.email || undefined,
+      nickname: registerForm.value.nickname || registerForm.value.username
+    })
+
+    const { access_token, user } = response.data
+
+    localStorage.setItem('token', access_token)
+    localStorage.setItem('user', JSON.stringify(user))
+
+    success.value = '注册成功，即将跳转...'
+    setTimeout(() => {
+      router.push('/')
+    }, 1000)
+  } catch (err: any) {
+    error.value = err.response?.data?.detail || '注册失败，请稍后再试'
   } finally {
     loading.value = false
   }
@@ -109,7 +246,7 @@ const handleLogin = async () => {
 
 .login-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 
   .logo {
     font-size: 32px;
@@ -125,10 +262,42 @@ const handleLogin = async () => {
   }
 }
 
+.auth-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 4px;
+  background: #f1f5f9;
+  border-radius: 10px;
+
+  .auth-tab {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #64748b;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      color: #667eea;
+    }
+
+    &.active {
+      background: white;
+      color: #667eea;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+  }
+}
+
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .form-group {
@@ -190,38 +359,13 @@ const handleLogin = async () => {
   text-align: center;
 }
 
-.test-accounts {
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid #e2e8f0;
-
-  .test-title {
-    font-size: 13px;
-    font-weight: 500;
-    color: #64748b;
-    margin: 0 0 12px 0;
-  }
-
-  .account-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-    font-size: 13px;
-    color: #475569;
-
-    span {
-      font-weight: 500;
-    }
-
-    code {
-      padding: 4px 8px;
-      background: #f1f5f9;
-      border-radius: 4px;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      color: #667eea;
-    }
-  }
+.success-message {
+  padding: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  color: #16a34a;
+  font-size: 14px;
+  text-align: center;
 }
 </style>
